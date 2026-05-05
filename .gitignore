@@ -1,0 +1,9 @@
+node_modules
+.next
+*.db
+*.db-journal
+.env
+.DS_Store
+.open-next
+.wrangler
+cloudflare-env.d.ts

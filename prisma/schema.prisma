@@ -1,0 +1,225 @@
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "binary"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  admin
+  principal
+  minister
+  moral_director
+  head_teacher
+  subject_teacher
+}
+
+enum Gender {
+  male
+  female
+}
+
+enum BoardingStatus {
+  boarding
+  day_student
+}
+
+enum AttendanceType {
+  normal
+  late
+  leave
+  absent
+  early_leave
+  dorm_absent
+}
+
+enum CommunicationMethod {
+  phone
+  wechat
+  onsite
+  message
+  other
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  passwordHash String
+  name         String
+  role         Role     @default(subject_teacher)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model ClassRoom {
+  id          Int      @id @default(autoincrement())
+  name        String
+  grade       String
+  headTeacher String
+  remark      String?
+  status      String   @default("active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  students Student[]
+}
+
+model Student {
+  id             Int            @id @default(autoincrement())
+  studentNo      String?       // 学号
+  name           String
+  gender         Gender
+  grade          String
+  phone          String?
+  parentName     String
+  parentPhone    String
+  boardingStatus BoardingStatus
+  status         String         @default("active")
+  artMajor       String?
+  remark         String?
+  isFocus        Boolean        @default(false)
+  focusNote      String?
+  focusMarkedBy  String?
+  focusMarkedAt  DateTime?
+  classId        Int?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  classRoom      ClassRoom?      @relation(fields: [classId], references: [id], onDelete: SetNull)
+  attendances    Attendance[]
+  disciplines      Discipline[]
+  scores           Score[]
+  communications   Communication[]
+  warningRecords   WarningRecord[]
+  guaranteeLetters GuaranteeLetter[]
+}
+
+model Attendance {
+  id               Int            @id @default(autoincrement())
+  studentId        Int
+  date             DateTime
+  type             AttendanceType
+  period           String         @default("")    // 时间段：早读/上午/下午/晚自习/宿舍归寝
+  leaveType        String?        // 请假类型：事假/病假/艺考外出/回家/其他
+  leaveStart       DateTime?      // 请假开始时间
+  leaveEnd         DateTime?      // 请假结束时间
+  parentConfirmed  Boolean        @default(false) // 是否家长确认
+  approvalStatus   String         @default("")    // 审批状态：approved/pending/rejected
+  approver         String?        // 审批人
+  description      String?
+  recorder         String
+  createdAt        DateTime       @default(now())
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([date])
+}
+
+model Discipline {
+  id             Int      @id @default(autoincrement())
+  studentId      Int
+  violationType  String
+  description    String
+  result         String
+  deductScore    Float    @default(0)   // 扣分
+  parentNotified Boolean  @default(false)
+  follower       String
+  remark         String?
+  recordedAt     DateTime @default(now())
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([recordedAt])
+}
+
+model Exam {
+  id        Int      @id @default(autoincrement())
+  name      String
+  examDate  DateTime
+  grade     String
+  type      String   @default("月考")  // 月考、模拟考、周测、限时训练、日常测验
+  remark    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  scores Score[]
+}
+
+model Score {
+  id        Int      @id @default(autoincrement())
+  examId    Int
+  studentId Int
+  classId   Int?
+  subject   String   // 语文/数学/英语/日语/俄语/物理/历史/化学/生物/政治/地理
+  score     Float    @default(0)
+  fullScore Float    @default(0)
+  remark    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  exam    Exam    @relation(fields: [examId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([examId, studentId, subject])
+  @@index([examId])
+  @@index([studentId])
+  @@index([classId])
+}
+
+model Communication {
+  id            Int                 @id @default(autoincrement())
+  studentId     Int
+  target        String
+  method        CommunicationMethod
+  content       String
+  parentFeedback String?            // 家长反馈
+  followUp      String?
+  communicator  String
+  contactedAt   DateTime            @default(now())
+  remark        String?
+  createdAt     DateTime            @default(now())
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([contactedAt])
+}
+
+model GuaranteeLetter {
+  id         Int      @id @default(autoincrement())
+  studentId  Int
+  fileName   String               // 文件名称
+  fileType   String   @default("") // 文件类型：image/jpeg, image/png, image/webp, application/pdf
+  fileSize   Int      @default(0)  // 文件大小（字节）
+  fileUrl    String   @default("") // 文件访问地址（R2 URL 或空）
+  remark     String?               // 备注
+  uploadedBy String                // 上传人
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+}
+
+model WarningRecord {
+  id              Int      @id @default(autoincrement())
+  studentId       Int
+  level           String   // 预警等级：low/medium/high/urgent
+  warningType     String   // 预警类型
+  reason          String   // 预警原因
+  currentMeasure  String?  // 当前处理措施
+  responsiblePerson String? // 负责人
+  nextFollowUpAt  DateTime? // 下次跟进时间
+  status          String   @default("pending") // 待处理/处理中/已解决
+  remark          String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([level])
+}

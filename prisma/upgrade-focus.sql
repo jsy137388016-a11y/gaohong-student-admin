@@ -1,0 +1,4 @@
+ALTER TABLE "Student" ADD COLUMN "isFocus" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "Student" ADD COLUMN "focusNote" TEXT;
+ALTER TABLE "Student" ADD COLUMN "focusMarkedBy" TEXT;
+ALTER TABLE "Student" ADD COLUMN "focusMarkedAt" DATETIME;
