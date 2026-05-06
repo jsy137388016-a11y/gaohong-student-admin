@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3001",
-    "build": "npx prisma generate && next build",
+    "dev": "NEXT_TELEMETRY_DISABLED=1 NEXT_TEST_WASM_DIR=node_modules/@next/swc-wasm-nodejs next dev -p 3001",
+    "build": "prisma generate && NEXT_TELEMETRY_DISABLED=1 NEXT_TEST_WASM_DIR=node_modules/@next/swc-wasm-nodejs next build",
     "start": "next start",
     "lint": "next lint",
     "prisma:generate": "prisma generate",
@@ -24,7 +24,7 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
-
+    "@next/swc-wasm-nodejs": "^15.5.15",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.15.3",
     "@types/react": "^19.0.10",

@@ -13,5 +13,6 @@ dist/
 .DS_Store
 Thumbs.db
 *.zip
+*.tsbuildinfo
 prisma/dev.db
 prisma/*.db

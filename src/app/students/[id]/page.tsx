@@ -6,12 +6,15 @@ import { GuaranteeLetterItem } from "./GuaranteeLetterItem";
 import { DeleteDisciplineButton } from "./DeleteDisciplineButton";
 import { StudentTabs } from "./StudentTabs";
 import { DashboardLayout } from "@/components/dashboard-layout";
-import { PageTitle, Panel } from "@/components/ui";
+import { EmptyText, PageTitle, Panel, TableShell } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import {
   ALL_SUBJECTS,
+  attendanceLabels,
   boardingLabels,
   displayDate,
+  displayDateTime,
+  displayValue,
   genderLabels,
   scoreTotalFromSubjects,
 } from "@/lib/format";
@@ -23,11 +26,11 @@ type PageProps = {
 
 export const dynamic = "force-dynamic";
 
-function InfoItem({ label, value }: { label: string; value: string }) {
+function InfoItem({ label, value }: { label: string; value: string | number | null | undefined }) {
   return (
     <div>
       <div className="text-xs text-slate-500">{label}</div>
-      <div className="mt-1 font-medium text-slate-900">{value || "—"}</div>
+      <div className="mt-1 font-medium text-slate-900">{displayValue(value)}</div>
     </div>
   );
 }
@@ -135,6 +138,17 @@ export default async function StudentDetailPage({ params }: PageProps) {
   );
   const moralRemaining = Math.max(0, MORAL_BASE - totalDeduct);
 
+  // 查询考勤记录
+  let attendanceRecords: any[] = [];
+  try {
+    attendanceRecords = await prisma.attendance.findMany({
+      where: { studentId: student.id },
+      orderBy: { date: "desc" },
+    });
+  } catch {
+    attendanceRecords = [];
+  }
+
   // 查询保证书记录
   let letters: any[] = [];
   try {
@@ -152,14 +166,14 @@ export default async function StudentDetailPage({ params }: PageProps) {
       <div className="mb-6 flex items-center justify-between">
         <Link
           href="/students"
-          className="inline-flex h-10 items-center gap-2 rounded border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
         >
           <ArrowLeft size={16} />
           返回学生管理
         </Link>
         <Link
           href={`/students/${student.id}/edit`}
-          className="inline-flex h-10 items-center gap-2 rounded bg-brand-600 px-4 text-sm font-medium text-white hover:bg-brand-700"
+          className="inline-flex h-10 items-center gap-2 rounded-lg bg-brand-600 px-4 text-sm font-medium text-white shadow-sm transition-colors hover:bg-brand-700"
         >
           <Edit3 size={16} />
           编辑学生
@@ -185,36 +199,40 @@ export default async function StudentDetailPage({ params }: PageProps) {
         children={{
           info: (
             <Panel title="基本信息">
-              <div className="grid gap-6 text-sm md:grid-cols-3">
-                <InfoItem label="姓名" value={student.name} />
-                <InfoItem label="性别" value={genderLabels[student.gender] || student.gender} />
-                <InfoItem label="年级" value={student.grade} />
-                <InfoItem
-                  label="班级"
-                  value={
-                    student.classRoom
-                      ? `${student.classRoom.grade} ${student.classRoom.name}`
-                      : "未分班"
-                  }
-                />
-                <InfoItem label="学号" value={student.studentNo || "—"} />
-                <InfoItem label="当前状态" value={statusLabel[student.status] || student.status} />
-                <InfoItem label="手机号" value={student.phone || "—"} />
-                <InfoItem label="家长姓名" value={student.parentName} />
-                <InfoItem label="家长电话" value={student.parentPhone} />
-                <InfoItem
-                  label="住宿状态"
-                  value={boardingLabels[student.boardingStatus] || student.boardingStatus}
-                />
-                <InfoItem label="艺考专业" value={student.artMajor || "—"} />
-                {student.remark ? <InfoItem label="备注" value={student.remark} /> : <div />}
+              <div className="grid gap-6 xl:grid-cols-[240px_1fr]">
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-5 text-center">
+                  <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-lg bg-brand-600 text-3xl font-semibold text-white shadow-sm">
+                    {student.name.slice(0, 1)}
+                  </div>
+                  <div className="mt-4 text-lg font-semibold text-slate-950">{student.name}</div>
+                  <div className="mt-1 text-sm text-slate-500">{statusLabel[student.status] || student.status}</div>
+                  <div className="mt-4 rounded-lg bg-white px-3 py-2 text-sm text-slate-600">
+                    {student.classRoom ? `${student.classRoom.grade} ${student.classRoom.name}` : "未分班"}
+                  </div>
+                </div>
+                <div className="grid gap-x-8 gap-y-5 text-sm md:grid-cols-2">
+                  <InfoItem label="学号" value={student.studentNo} />
+                  <InfoItem label="性别" value={genderLabels[student.gender] || student.gender} />
+                  <InfoItem label="年级" value={student.grade} />
+                  <InfoItem
+                    label="班级"
+                    value={student.classRoom ? `${student.classRoom.grade} ${student.classRoom.name}` : "未分班"}
+                  />
+                  <InfoItem label="当前状态" value={statusLabel[student.status] || student.status} />
+                  <InfoItem label="住宿状态" value={boardingLabels[student.boardingStatus] || student.boardingStatus} />
+                  <InfoItem label="艺考专业" value={student.artMajor} />
+                  <InfoItem label="手机号" value={student.phone} />
+                  <InfoItem label="家长姓名" value={student.parentName} />
+                  <InfoItem label="家长电话" value={student.parentPhone} />
+                  <InfoItem label="备注" value={student.remark} />
+                </div>
               </div>
             </Panel>
           ),
           scores: (
             <Panel title="考试成绩">
               {examGroups.length === 0 ? (
-                <div className="py-8 text-center text-sm text-slate-500">暂无成绩记录</div>
+                <EmptyText />
               ) : (
                 <div className="space-y-4">
                   {examGroups.map((exam) => {
@@ -272,6 +290,38 @@ export default async function StudentDetailPage({ params }: PageProps) {
               )}
             </Panel>
           ),
+          attendance: (
+            <Panel title="考勤记录">
+              {attendanceRecords.length === 0 ? (
+                <EmptyText />
+              ) : (
+                <TableShell>
+                  <table className="min-w-full divide-y divide-slate-200 text-sm">
+                    <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
+                      <tr>
+                        <th className="px-4 py-3">日期</th>
+                        <th className="px-4 py-3">类型</th>
+                        <th className="px-4 py-3">时间段</th>
+                        <th className="px-4 py-3">说明</th>
+                        <th className="px-4 py-3">记录人</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 bg-white">
+                      {attendanceRecords.map((item) => (
+                        <tr key={item.id}>
+                          <td className="px-4 py-3">{displayDateTime(item.date)}</td>
+                          <td className="px-4 py-3">{attendanceLabels[item.type] || displayValue(item.type)}</td>
+                          <td className="px-4 py-3">{displayValue(item.period)}</td>
+                          <td className="px-4 py-3">{displayValue(item.description)}</td>
+                          <td className="px-4 py-3">{displayValue(item.recorder)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </TableShell>
+              )}
+            </Panel>
+          ),
           disciplines: (
             <Panel title="违纪记录">
               <div className="mb-4">
@@ -314,7 +364,7 @@ export default async function StudentDetailPage({ params }: PageProps) {
 
               {/* 违纪列表 */}
               {disciplines.length === 0 ? (
-                <div className="py-8 text-center text-sm text-slate-500">暂无违纪记录</div>
+                <EmptyText />
               ) : (
                 <div className="space-y-3">
                   {disciplines.map((d: any) => (
@@ -352,7 +402,7 @@ export default async function StudentDetailPage({ params }: PageProps) {
                 <GuaranteeLetterForm studentId={student.id} />
               </div>
               {letters.length === 0 ? (
-                <div className="py-8 text-center text-sm text-slate-500">暂无保证书留档</div>
+                <EmptyText />
               ) : (
                 <div className="space-y-3">
                   {letters.map((l: any) => (

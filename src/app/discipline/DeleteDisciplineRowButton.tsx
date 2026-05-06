@@ -4,7 +4,7 @@ import { useActionState, useRef } from "react";
 import { Trash2 } from "lucide-react";
 import { deleteDiscipline } from "./actions";
 
-export function DeleteDisciplineRowButton({ id }: { id: number }) {
+export function DeleteDisciplineRowButton({ id, variant = "icon" }: { id: number; variant?: "icon" | "menu" }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [state, formAction, isPending] = useActionState(
     async (_prev: { ok: boolean; error?: string } | null, _formData: FormData) => {
@@ -25,10 +25,15 @@ export function DeleteDisciplineRowButton({ id }: { id: number }) {
       <button
         type="button"
         onClick={() => dialogRef.current?.showModal()}
-        className="inline-flex h-8 w-8 items-center justify-center rounded border border-red-200 text-red-600 hover:bg-red-50"
+        className={
+          variant === "menu"
+            ? "flex h-8 w-full items-center justify-start gap-2 rounded px-3 text-left text-xs font-medium text-red-600 hover:bg-red-50"
+            : "inline-flex h-8 w-8 items-center justify-center rounded border border-red-200 text-red-600 hover:bg-red-50"
+        }
         title="删除"
       >
         <Trash2 size={15} />
+        {variant === "menu" ? "删除" : null}
       </button>
       <dialog ref={dialogRef} className="rounded-lg p-0 shadow-xl backdrop:bg-black/30">
         <div className="p-5">
