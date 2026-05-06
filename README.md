@@ -110,3 +110,5 @@ npm run build
 ## Cloudflare/D1 资料
 
 仓库中仍保留 `DEPLOY_CLOUDFLARE.md`、`wrangler.jsonc`、`prisma/init.sql` 和 D1 迁移 SQL，供历史版本或迁移参考。当前主线不再把 Cloudflare OpenNext 配置纳入 TypeScript 检查，避免在 PostgreSQL standalone 开发时引入无关依赖。
+<!-- trigger cloudflare build -->
+
