@@ -42,15 +42,15 @@ export function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <aside className="fixed left-0 top-0 hidden h-screen w-64 border-r border-slate-200 bg-white lg:block">
+    <div className="min-h-screen bg-slate-100">
+      <aside className="fixed left-0 top-0 hidden h-screen w-64 border-r border-slate-200 bg-white shadow-sm lg:block">
         <div className="flex h-16 items-center gap-3 border-b border-slate-200 px-6">
-          <div className="flex h-10 w-10 items-center justify-center rounded bg-brand-600 text-white">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-600 text-white shadow-sm">
             <GraduationCap size={22} />
           </div>
           <div>
             <div className="text-base font-semibold text-slate-950">高宏学生管理</div>
-            <div className="text-xs text-slate-500">学校后台 MVP</div>
+            <div className="text-xs text-slate-500">学校后台系统</div>
           </div>
         </div>
         <nav className="space-y-1 px-3 py-4">
@@ -60,7 +60,7 @@ export function DashboardLayout({
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex h-11 items-center gap-3 rounded px-3 text-sm font-medium text-slate-700 hover:bg-brand-50 hover:text-brand-700"
+                className="flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium text-slate-700 transition-colors hover:bg-brand-50 hover:text-brand-700"
               >
                 <Icon size={18} />
                 {item.label}
@@ -71,7 +71,7 @@ export function DashboardLayout({
       </aside>
 
       <div className="lg:pl-64">
-        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 lg:px-8">
+        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200 bg-white/95 px-4 shadow-sm backdrop-blur lg:px-8">
           <div className="lg:hidden">
             <div className="text-base font-semibold text-slate-950">高宏学生管理</div>
             <div className="text-xs text-slate-500">后台系统</div>
@@ -84,7 +84,7 @@ export function DashboardLayout({
             </div>
             <form action={logoutAction}>
               <button
-                className="inline-flex h-9 w-9 items-center justify-center rounded border border-slate-200 text-slate-600 hover:bg-slate-100"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-100"
                 title="退出登录"
               >
                 <LogOut size={17} />
@@ -99,7 +99,7 @@ export function DashboardLayout({
               <Link
                 key={item.href}
                 href={item.href}
-                className="shrink-0 rounded border border-slate-200 px-3 py-2 text-sm text-slate-700"
+                className="shrink-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
               >
                 {item.label}
               </Link>
@@ -107,7 +107,7 @@ export function DashboardLayout({
           </div>
         </div>
 
-        <main className="px-4 py-6 lg:px-8">{children}</main>
+        <main className="mx-auto max-w-[1440px] px-4 py-8 lg:px-8">{children}</main>
       </div>
     </div>
   );

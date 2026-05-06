@@ -1,6 +1,6 @@
 import { StudentSearchSelect } from "@/components/StudentSearchSelect";
 import { DashboardLayout } from "@/components/dashboard-layout";
-import { ConfirmButton, EmptyText, inputClass, PageTitle, Panel, SearchButton, TableShell } from "@/components/ui";
+import { ConfirmButton, EmptyText, FilterBar, inputClass, PageTitle, Panel, SearchButton, TableShell } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import { attendanceLabels, displayDate, displayValue, firstValue } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
@@ -70,7 +70,8 @@ export default async function AttendancePage({ searchParams }: PageProps) {
       {/* 查询筛选区域 */}
       <div className="mb-6 grid gap-6">
         <Panel title="查询筛选">
-          <form className="grid gap-4 md:grid-cols-[180px_220px_220px_auto_auto]" action="/attendance">
+          <FilterBar>
+          <form className="grid gap-3 md:grid-cols-[180px_220px_220px_auto_auto] md:items-center" action="/attendance">
             <input type="date" name="date" defaultValue={date} className={inputClass} />
             <select name="classId" defaultValue={classId} className={inputClass}>
               <option value="">全部班级</option>
@@ -82,6 +83,7 @@ export default async function AttendancePage({ searchParams }: PageProps) {
             <SearchButton />
             <AttendanceCreateModal students={students} userName={user.name} />
           </form>
+          </FilterBar>
         </Panel>
       </div>
 
@@ -92,27 +94,27 @@ export default async function AttendancePage({ searchParams }: PageProps) {
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
               <tr>
-                <th className="px-4 py-3">日期</th>
-                <th className="px-4 py-3">学生</th>
-                <th className="px-4 py-3">班级</th>
-                <th className="px-4 py-3">类型</th>
-                <th className="px-4 py-3">时间段</th>
-                <th className="px-4 py-3">说明</th>
-                <th className="px-4 py-3">记录人</th>
-                <th className="px-4 py-3 text-right">操作</th>
+                <th className="px-5 py-3">日期</th>
+                <th className="px-5 py-3">学生</th>
+                <th className="px-5 py-3">班级</th>
+                <th className="px-5 py-3">类型</th>
+                <th className="px-5 py-3">时间段</th>
+                <th className="px-5 py-3">说明</th>
+                <th className="px-5 py-3">记录人</th>
+                <th className="px-5 py-3 text-right">操作</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
               {attendance.map((item) => (
                 <tr key={item.id}>
-                  <td className="px-4 py-3">{displayDate(item.date)}</td>
-                  <td className="px-4 py-3 font-medium">{displayValue(item.student.name)}</td>
-                  <td className="px-4 py-3">{item.student.classRoom?.name || "未分班"}</td>
-                  <td className="px-4 py-3">{attendanceLabels[item.type] || displayValue(item.type)}</td>
-                  <td className="px-4 py-3">{displayValue(item.period)}</td>
-                  <td className="px-4 py-3">{displayValue(item.description)}</td>
-                  <td className="px-4 py-3">{displayValue(item.recorder)}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-5 py-3">{displayDate(item.date)}</td>
+                  <td className="px-5 py-3 font-medium">{displayValue(item.student.name)}</td>
+                  <td className="px-5 py-3">{item.student.classRoom?.name || "未分班"}</td>
+                  <td className="px-5 py-3">{attendanceLabels[item.type] || displayValue(item.type)}</td>
+                  <td className="px-5 py-3">{displayValue(item.period)}</td>
+                  <td className="px-5 py-3">{displayValue(item.description)}</td>
+                  <td className="px-5 py-3">{displayValue(item.recorder)}</td>
+                  <td className="px-5 py-3">
                     <form action={deleteAttendance.bind(null, item.id)} className="flex justify-end">
                       <ConfirmButton
                         label="删除"

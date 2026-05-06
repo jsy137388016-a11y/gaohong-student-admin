@@ -18,16 +18,16 @@ export function StudentTabs({ children }: { children: Record<TabKey, React.React
   return (
     <div>
       {/* Tab 栏 */}
-      <div className="mb-6 flex flex-wrap gap-1 rounded border border-slate-200 bg-white p-1">
+      <div className="mb-6 flex flex-wrap gap-1 rounded-lg border border-slate-200 bg-white p-1.5 shadow-sm">
         {TABS.map((tab) => (
           <button
             key={tab.key}
             type="button"
             onClick={() => setActive(tab.key)}
-            className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+            className={`rounded-md px-4 py-2.5 text-sm font-medium transition-all ${
               active === tab.key
-                ? "bg-brand-600 text-white"
-                : "text-slate-600 hover:bg-slate-100"
+                ? "bg-brand-600 text-white shadow-sm"
+                : "text-slate-600 hover:bg-slate-100 hover:text-slate-950"
             }`}
           >
             {tab.label}

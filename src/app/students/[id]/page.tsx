@@ -166,14 +166,14 @@ export default async function StudentDetailPage({ params }: PageProps) {
       <div className="mb-6 flex items-center justify-between">
         <Link
           href="/students"
-          className="inline-flex h-10 items-center gap-2 rounded border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
         >
           <ArrowLeft size={16} />
           返回学生管理
         </Link>
         <Link
           href={`/students/${student.id}/edit`}
-          className="inline-flex h-10 items-center gap-2 rounded bg-brand-600 px-4 text-sm font-medium text-white hover:bg-brand-700"
+          className="inline-flex h-10 items-center gap-2 rounded-lg bg-brand-600 px-4 text-sm font-medium text-white shadow-sm transition-colors hover:bg-brand-700"
         >
           <Edit3 size={16} />
           编辑学生
@@ -198,17 +198,22 @@ export default async function StudentDetailPage({ params }: PageProps) {
       <StudentTabs
         children={{
           info: (
-            <div className="grid gap-4 lg:grid-cols-3">
-              <Panel title="档案信息">
-                <div className="grid gap-4 text-sm">
-                  <InfoItem label="姓名" value={student.name} />
+            <Panel title="基本信息">
+              <div className="grid gap-6 xl:grid-cols-[240px_1fr]">
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-5 text-center">
+                  <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-lg bg-brand-600 text-3xl font-semibold text-white shadow-sm">
+                    {student.name.slice(0, 1)}
+                  </div>
+                  <div className="mt-4 text-lg font-semibold text-slate-950">{student.name}</div>
+                  <div className="mt-1 text-sm text-slate-500">{statusLabel[student.status] || student.status}</div>
+                  <div className="mt-4 rounded-lg bg-white px-3 py-2 text-sm text-slate-600">
+                    {student.classRoom ? `${student.classRoom.grade} ${student.classRoom.name}` : "未分班"}
+                  </div>
+                </div>
+                <div className="grid gap-x-8 gap-y-5 text-sm md:grid-cols-2">
                   <InfoItem label="学号" value={student.studentNo} />
                   <InfoItem label="性别" value={genderLabels[student.gender] || student.gender} />
                   <InfoItem label="年级" value={student.grade} />
-                </div>
-              </Panel>
-              <Panel title="班级与专业">
-                <div className="grid gap-4 text-sm">
                   <InfoItem
                     label="班级"
                     value={student.classRoom ? `${student.classRoom.grade} ${student.classRoom.name}` : "未分班"}
@@ -216,17 +221,13 @@ export default async function StudentDetailPage({ params }: PageProps) {
                   <InfoItem label="当前状态" value={statusLabel[student.status] || student.status} />
                   <InfoItem label="住宿状态" value={boardingLabels[student.boardingStatus] || student.boardingStatus} />
                   <InfoItem label="艺考专业" value={student.artMajor} />
-                </div>
-              </Panel>
-              <Panel title="联系方式">
-                <div className="grid gap-4 text-sm">
                   <InfoItem label="手机号" value={student.phone} />
                   <InfoItem label="家长姓名" value={student.parentName} />
                   <InfoItem label="家长电话" value={student.parentPhone} />
                   <InfoItem label="备注" value={student.remark} />
                 </div>
-              </Panel>
-            </div>
+              </div>
+            </Panel>
           ),
           scores: (
             <Panel title="考试成绩">

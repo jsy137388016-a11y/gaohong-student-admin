@@ -1,24 +1,62 @@
 import Link from "next/link";
-import { AlertCircle, BookOpen, CalendarDays, MessageSquareWarning, School, Users } from "lucide-react";
+import { AlertCircle, ArrowRight, BookOpen, CalendarDays, MessageSquareWarning, School, Users } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard-layout";
-import { PageTitle, Panel } from "@/components/ui";
+import { EmptyText, PageTitle, Panel } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import { displayDateTime, scoreTotalFromSubjects } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { FollowUpItem } from "./FollowUpItem";
 
-function StatCard({ title, value, icon: Icon, href }: { title: string; value: string | number; icon: React.ElementType; href: string }) {
+function StatCard({
+  title,
+  value,
+  icon: Icon,
+  href,
+  tone
+}: {
+  title: string;
+  value: string | number;
+  icon: React.ElementType;
+  href: string;
+  tone: "blue" | "emerald" | "amber" | "red" | "violet";
+}) {
+  const tones = {
+    blue: "border-blue-100 bg-blue-50 text-blue-700",
+    emerald: "border-emerald-100 bg-emerald-50 text-emerald-700",
+    amber: "border-amber-100 bg-amber-50 text-amber-700",
+    red: "border-red-100 bg-red-50 text-red-700",
+    violet: "border-violet-100 bg-violet-50 text-violet-700"
+  };
+
   return (
-    <Link href={href} className="rounded border border-slate-200 bg-white p-5 hover:border-brand-300 hover:bg-brand-50/30 transition-colors cursor-pointer">
+    <Link href={href} className="group rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-sm text-slate-500">{title}</div>
-          <div className="mt-2 text-3xl font-semibold text-slate-950">{value}</div>
+          <div className="text-sm font-medium text-slate-500">{title}</div>
+          <div className="mt-3 text-4xl font-semibold tracking-tight text-slate-950">{value}</div>
         </div>
-        <div className="flex h-11 w-11 items-center justify-center rounded bg-brand-50 text-brand-700">
+        <div className={`flex h-12 w-12 items-center justify-center rounded-lg border ${tones[tone]}`}>
           <Icon size={22} />
         </div>
       </div>
+      <div className="mt-4 flex items-center gap-1 text-xs font-medium text-slate-400 group-hover:text-brand-700">
+        查看详情 <ArrowRight size={13} />
+      </div>
+    </Link>
+  );
+}
+
+function QuickEntry({ href, title, description, icon: Icon }: { href: string; title: string; description: string; icon: React.ElementType }) {
+  return (
+    <Link href={href} className="group flex items-center gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition-all hover:border-brand-200 hover:bg-brand-50/40">
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600 group-hover:bg-brand-100 group-hover:text-brand-700">
+        <Icon size={20} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="font-medium text-slate-950">{title}</div>
+        <div className="mt-0.5 text-xs leading-5 text-slate-500">{description}</div>
+      </div>
+      <ArrowRight size={16} className="text-slate-300 group-hover:text-brand-600" />
     </Link>
   );
 }
@@ -77,18 +115,18 @@ export default async function DashboardPage() {
     <DashboardLayout user={user}>
       <PageTitle title="首页数据看板" description="快速查看学校今日重点数据和最近待跟进事项。" />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        <StatCard title="学生总数" value={studentCount} icon={Users} href="/students" />
-        <StatCard title="班级总数" value={classCount} icon={School} href="/classes" />
-        <StatCard title="今日请假人数" value={todayLeaveCount} icon={CalendarDays} href="/attendance" />
-        <StatCard title="本周违纪次数" value={weekDisciplineCount} icon={AlertCircle} href="/discipline" />
-        <StatCard title="最近考试平均分" value={latestAverage} icon={BookOpen} href="/exams" />
+        <StatCard title="学生总数" value={studentCount} icon={Users} href="/students" tone="blue" />
+        <StatCard title="班级总数" value={classCount} icon={School} href="/classes" tone="emerald" />
+        <StatCard title="今日请假人数" value={todayLeaveCount} icon={CalendarDays} href="/attendance" tone="amber" />
+        <StatCard title="本周违纪次数" value={weekDisciplineCount} icon={AlertCircle} href="/discipline" tone="red" />
+        <StatCard title="最近考试平均分" value={latestAverage} icon={BookOpen} href="/exams" tone="violet" />
       </div>
 
-      <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_360px]">
+      <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_420px]">
         <Panel title="最近需要跟进的家校沟通事项">
           <div className="space-y-3">
             {followUps.length === 0 ? (
-              <div className="text-sm text-slate-500">暂无待跟进事项</div>
+              <EmptyText />
             ) : (
               followUps.map((item) => (
                 <FollowUpItem
@@ -107,15 +145,10 @@ export default async function DashboardPage() {
 
         <Panel title="常用入口">
           <div className="grid gap-3">
-            <Link href="/students" className="flex items-center justify-between rounded border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50">
-              学生档案管理 <Users size={16} />
-            </Link>
-            <Link href="/attendance" className="flex items-center justify-between rounded border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50">
-              今日考勤记录 <CalendarDays size={16} />
-            </Link>
-            <Link href="/communications" className="flex items-center justify-between rounded border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50">
-              家校沟通跟进 <MessageSquareWarning size={16} />
-            </Link>
+            <QuickEntry href="/students" title="学生档案管理" description="查看学生资料、班级归属和重点关注状态" icon={Users} />
+            <QuickEntry href="/attendance" title="今日考勤记录" description="录入请假、迟到、旷课、早退等考勤状态" icon={CalendarDays} />
+            <QuickEntry href="/discipline" title="纪律与扣分" description="查看违纪处理记录和德育扣分情况" icon={AlertCircle} />
+            <QuickEntry href="/communications" title="家校沟通跟进" description="沉淀沟通记录和后续跟进事项" icon={MessageSquareWarning} />
           </div>
         </Panel>
       </div>

@@ -4,6 +4,7 @@ import { DashboardLayout } from "@/components/dashboard-layout";
 import {
   ConfirmButton,
   EmptyText,
+  FilterBar,
   inputClass,
   menuItemClass,
   MoreActions,
@@ -126,7 +127,8 @@ export default async function StudentsPage({ searchParams }: PageProps) {
       {/* 查询筛选区域 */}
       <div className="mb-6 grid gap-6">
         <Panel title="查询筛选">
-          <form className="grid gap-4 md:grid-cols-[1fr_220px_auto_auto]" action="/students">
+          <FilterBar>
+          <form className="grid gap-3 md:grid-cols-[1fr_220px_auto_auto] md:items-center" action="/students">
             <input name="q" defaultValue={q} placeholder="搜索姓名、手机、家长" className={inputClass} />
             <select name="classId" defaultValue={classId} className={inputClass}>
               <option value="">全部班级</option>
@@ -140,6 +142,7 @@ export default async function StudentsPage({ searchParams }: PageProps) {
             <SearchButton />
             <StudentCreateModal classes={classes} />
           </form>
+          </FilterBar>
           <StudentImportPanel />
         </Panel>
       </div>
@@ -158,14 +161,14 @@ export default async function StudentsPage({ searchParams }: PageProps) {
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
               <tr>
-                <th className="px-4 py-3">姓名</th>
-                <th className="px-4 py-3">性别</th>
-                <th className="px-4 py-3">班级</th>
-                <th className="px-4 py-3">电话</th>
-                <th className="px-4 py-3">家长</th>
-                <th className="px-4 py-3">住宿</th>
-                <th className="px-4 py-3">专业</th>
-                <th className="px-4 py-3 text-right">操作</th>
+                <th className="px-5 py-3">姓名</th>
+                <th className="px-5 py-3">性别</th>
+                <th className="px-5 py-3">班级</th>
+                <th className="px-5 py-3">电话</th>
+                <th className="px-5 py-3">家长</th>
+                <th className="px-5 py-3">住宿</th>
+                <th className="px-5 py-3">专业</th>
+                <th className="px-5 py-3 text-right">操作</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
@@ -174,7 +177,7 @@ export default async function StudentsPage({ searchParams }: PageProps) {
                 const classDisplay = classInfo ? `${classInfo.grade} ${classInfo.name}` : "暂未分班";
                 return (
                   <tr key={student.id}>
-                    <td className="px-4 py-3 font-medium text-slate-950">
+                    <td className="px-5 py-3 font-medium text-slate-950">
                       <Link href={`/students/${student.id}`} className="hover:text-brand-700 hover:underline">
                         {student.name}
                       </Link>
@@ -182,13 +185,13 @@ export default async function StudentsPage({ searchParams }: PageProps) {
                         <span className="ml-2 rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">重点</span>
                       ) : null}
                     </td>
-                    <td className="px-4 py-3">{genderLabels[student.gender] ?? student.gender}</td>
-                    <td className="px-4 py-3">{classDisplay}</td>
-                    <td className="px-4 py-3">{displayValue(student.phone)}</td>
-                    <td className="px-4 py-3">{student.parentName} {student.parentPhone}</td>
-                    <td className="px-4 py-3">{boardingLabels[student.boardingStatus] ?? student.boardingStatus}</td>
-                    <td className="px-4 py-3">{displayValue(student.artMajor)}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-5 py-3">{genderLabels[student.gender] ?? student.gender}</td>
+                    <td className="px-5 py-3">{classDisplay}</td>
+                    <td className="px-5 py-3">{displayValue(student.phone)}</td>
+                    <td className="px-5 py-3">{student.parentName} {student.parentPhone}</td>
+                    <td className="px-5 py-3">{boardingLabels[student.boardingStatus] ?? student.boardingStatus}</td>
+                    <td className="px-5 py-3">{displayValue(student.artMajor)}</td>
+                    <td className="px-5 py-3">
                       <div className="flex justify-end">
                         <MoreActions>
                           <Link className={menuItemClass} href={`/students/${student.id}/edit`}>

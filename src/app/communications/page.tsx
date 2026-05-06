@@ -1,6 +1,6 @@
 import { Trash2 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard-layout";
-import { AddButton, dangerMenuItemClass, EmptyText, Field, inputClass, MoreActions, PageTitle, Panel, SearchButton, TableShell, textareaClass } from "@/components/ui";
+import { AddButton, dangerMenuItemClass, EmptyText, Field, FilterBar, inputClass, MoreActions, PageTitle, Panel, SearchButton, TableShell, textareaClass } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import { displayDateTime, displayValue, firstValue, methodLabels } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
@@ -46,7 +46,8 @@ export default async function CommunicationsPage({ searchParams }: PageProps) {
       <PageTitle title="家校沟通" description="记录与家长的沟通对象、方式、内容和后续跟进事项。" />
       <div className="mb-6 grid gap-6 xl:grid-cols-[1fr_380px]">
         <Panel title="查看学生沟通记录">
-          <form className="grid gap-4 md:grid-cols-[260px_auto]" action="/communications">
+          <FilterBar>
+          <form className="grid gap-3 md:grid-cols-[260px_auto] md:items-center" action="/communications">
             <select name="studentId" defaultValue={studentId} className={inputClass}>
               <option value="">全部学生</option>
               {students.map((item) => (
@@ -55,6 +56,7 @@ export default async function CommunicationsPage({ searchParams }: PageProps) {
             </select>
             <SearchButton />
           </form>
+          </FilterBar>
         </Panel>
         <Panel title="新增沟通记录">
           <form action={createCommunication} className="grid gap-4">
@@ -104,29 +106,29 @@ export default async function CommunicationsPage({ searchParams }: PageProps) {
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
               <tr>
-                <th className="px-4 py-3">学生</th>
-                <th className="px-4 py-3">班级</th>
-                <th className="px-4 py-3">对象</th>
-                <th className="px-4 py-3">方式</th>
-                <th className="px-4 py-3">内容</th>
-                <th className="px-4 py-3">后续跟进</th>
-                <th className="px-4 py-3">沟通人</th>
-                <th className="px-4 py-3">时间</th>
-                <th className="px-4 py-3 text-right">操作</th>
+                <th className="px-5 py-3">学生</th>
+                <th className="px-5 py-3">班级</th>
+                <th className="px-5 py-3">对象</th>
+                <th className="px-5 py-3">方式</th>
+                <th className="px-5 py-3">内容</th>
+                <th className="px-5 py-3">后续跟进</th>
+                <th className="px-5 py-3">沟通人</th>
+                <th className="px-5 py-3">时间</th>
+                <th className="px-5 py-3 text-right">操作</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
               {records.map((item) => (
                 <tr key={item.id}>
-                  <td className="px-4 py-3 font-medium">{displayValue(item.student.name)}</td>
-                  <td className="px-4 py-3">{item.student.classRoom?.name || "未分班"}</td>
-                  <td className="px-4 py-3">{displayValue(item.target)}</td>
-                  <td className="px-4 py-3">{methodLabels[item.method] || displayValue(item.method)}</td>
-                  <td className="px-4 py-3">{displayValue(item.content)}</td>
-                  <td className="px-4 py-3">{displayValue(item.followUp)}</td>
-                  <td className="px-4 py-3">{displayValue(item.communicator)}</td>
-                  <td className="px-4 py-3">{displayDateTime(item.contactedAt)}</td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-5 py-3 font-medium">{displayValue(item.student.name)}</td>
+                  <td className="px-5 py-3">{item.student.classRoom?.name || "未分班"}</td>
+                  <td className="px-5 py-3">{displayValue(item.target)}</td>
+                  <td className="px-5 py-3">{methodLabels[item.method] || displayValue(item.method)}</td>
+                  <td className="px-5 py-3">{displayValue(item.content)}</td>
+                  <td className="px-5 py-3">{displayValue(item.followUp)}</td>
+                  <td className="px-5 py-3">{displayValue(item.communicator)}</td>
+                  <td className="px-5 py-3">{displayDateTime(item.contactedAt)}</td>
+                  <td className="px-5 py-3 text-right">
                     <MoreActions>
                       <form action={deleteCommunication.bind(null, item.id)}>
                         <button className={dangerMenuItemClass}>
