@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Save, Search, Trash2 } from "lucide-react";
+import { MoreHorizontal, Plus, Save, Search, Trash2 } from "lucide-react";
 
 /**
  * 确认删除按钮（客户端组件）
@@ -140,6 +140,25 @@ export function DeleteButton() {
     </button>
   );
 }
+
+export function MoreActions({ children }: { children: React.ReactNode }) {
+  return (
+    <details className="group relative inline-block text-left">
+      <summary className="inline-flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded border border-slate-200 text-slate-600 hover:bg-slate-50 [&::-webkit-details-marker]:hidden" title="更多操作">
+        <MoreHorizontal size={16} />
+      </summary>
+      <div className="absolute right-0 z-20 mt-1 min-w-28 rounded border border-slate-200 bg-white p-1 shadow-lg">
+        <div className="grid gap-1">{children}</div>
+      </div>
+    </details>
+  );
+}
+
+export const menuItemClass =
+  "flex h-8 w-full items-center justify-start gap-2 rounded px-3 text-left text-xs font-medium text-slate-700 hover:bg-slate-50";
+
+export const dangerMenuItemClass =
+  "flex h-8 w-full items-center justify-start gap-2 rounded px-3 text-left text-xs font-medium text-red-600 hover:bg-red-50";
 
 export function TableShell({ children }: { children: React.ReactNode }) {
   return <div className="overflow-x-auto rounded border border-slate-200 bg-white">{children}</div>;

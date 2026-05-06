@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 
-type TabKey = "info" | "scores" | "disciplines" | "guarantees";
+type TabKey = "info" | "scores" | "attendance" | "disciplines" | "guarantees";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "info", label: "基本信息" },
   { key: "scores", label: "成绩记录" },
+  { key: "attendance", label: "考勤记录" },
   { key: "disciplines", label: "违纪记录" },
   { key: "guarantees", label: "保证书" },
 ];
@@ -17,7 +18,7 @@ export function StudentTabs({ children }: { children: Record<TabKey, React.React
   return (
     <div>
       {/* Tab 栏 */}
-      <div className="mb-6 flex gap-1 rounded-lg border border-slate-200 bg-white p-1">
+      <div className="mb-6 flex flex-wrap gap-1 rounded border border-slate-200 bg-white p-1">
         {TABS.map((tab) => (
           <button
             key={tab.key}

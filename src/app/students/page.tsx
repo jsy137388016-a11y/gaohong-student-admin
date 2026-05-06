@@ -2,21 +2,20 @@ import Link from "next/link";
 import { Edit3 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import {
-  AddButton,
   ConfirmButton,
   EmptyText,
-  Field,
   inputClass,
+  menuItemClass,
+  MoreActions,
   PageTitle,
   Panel,
   SearchButton,
   TableShell,
-  textareaClass
 } from "@/components/ui";
 import { StudentImportPanel } from "@/components/student-import";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { boardingLabels, firstValue, genderLabels } from "@/lib/format";
+import { boardingLabels, displayValue, firstValue, genderLabels } from "@/lib/format";
 import { createStudent, deleteStudent } from "./actions";
 import { StudentCreateModal } from "./StudentCreateModal";
 import { Pagination } from "./Pagination";
@@ -152,7 +151,7 @@ export default async function StudentsPage({ searchParams }: PageProps) {
       </div>
 
       {students.length === 0 ? (
-        <EmptyText text="没有找到学生记录" />
+        <EmptyText />
       ) : (
         <>
           <TableShell>
@@ -185,21 +184,24 @@ export default async function StudentsPage({ searchParams }: PageProps) {
                     </td>
                     <td className="px-4 py-3">{genderLabels[student.gender] ?? student.gender}</td>
                     <td className="px-4 py-3">{classDisplay}</td>
-                    <td className="px-4 py-3">{student.phone || "-"}</td>
+                    <td className="px-4 py-3">{displayValue(student.phone)}</td>
                     <td className="px-4 py-3">{student.parentName} {student.parentPhone}</td>
                     <td className="px-4 py-3">{boardingLabels[student.boardingStatus] ?? student.boardingStatus}</td>
-                    <td className="px-4 py-3">{student.artMajor || "-"}</td>
+                    <td className="px-4 py-3">{displayValue(student.artMajor)}</td>
                     <td className="px-4 py-3">
-                      <div className="flex justify-end gap-2">
-                        <Link className="inline-flex h-8 w-8 items-center justify-center rounded border border-slate-200 text-slate-600 hover:bg-slate-50" href={`/students/${student.id}/edit`} title="编辑">
-                          <Edit3 size={15} />
-                        </Link>
+                      <div className="flex justify-end">
+                        <MoreActions>
+                          <Link className={menuItemClass} href={`/students/${student.id}/edit`}>
+                            <Edit3 size={14} />
+                            编辑
+                          </Link>
                         <form action={deleteStudent.bind(null, student.id)}>
                           <ConfirmButton
                             label="删除"
                             confirmText="确认删除该学生吗？系统将改为软删除，不会物理删除历史数据。"
                           />
                         </form>
+                        </MoreActions>
                       </div>
                     </td>
                   </tr>

@@ -53,16 +53,21 @@ export function dateTimeInputValue(date?: Date | string | null) {
 }
 
 export function displayDate(date?: Date | string | null) {
-  if (!date) return "-";
+  if (!date) return "—";
   return new Intl.DateTimeFormat("zh-CN", { dateStyle: "medium" }).format(new Date(date));
 }
 
 export function displayDateTime(date?: Date | string | null) {
-  if (!date) return "-";
+  if (!date) return "—";
   return new Intl.DateTimeFormat("zh-CN", {
     dateStyle: "medium",
     timeStyle: "short"
   }).format(new Date(date));
+}
+
+export function displayValue(value?: string | number | null) {
+  if (value === null || value === undefined || value === "") return "—";
+  return String(value);
 }
 
 export function firstValue(value: string | string[] | undefined) {

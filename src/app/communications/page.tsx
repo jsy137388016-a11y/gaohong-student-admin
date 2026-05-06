@@ -1,7 +1,8 @@
+import { Trash2 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard-layout";
-import { AddButton, DeleteButton, Field, inputClass, PageTitle, Panel, SearchButton, TableShell, textareaClass } from "@/components/ui";
+import { AddButton, dangerMenuItemClass, EmptyText, Field, inputClass, MoreActions, PageTitle, Panel, SearchButton, TableShell, textareaClass } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
-import { displayDateTime, firstValue, methodLabels } from "@/lib/format";
+import { displayDateTime, displayValue, firstValue, methodLabels } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { createCommunication, deleteCommunication } from "./actions";
 
@@ -96,42 +97,51 @@ export default async function CommunicationsPage({ searchParams }: PageProps) {
         </Panel>
       </div>
 
-      <TableShell>
-        <table className="min-w-full divide-y divide-slate-200 text-sm">
-          <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
-            <tr>
-              <th className="px-4 py-3">学生</th>
-              <th className="px-4 py-3">班级</th>
-              <th className="px-4 py-3">对象</th>
-              <th className="px-4 py-3">方式</th>
-              <th className="px-4 py-3">内容</th>
-              <th className="px-4 py-3">后续跟进</th>
-              <th className="px-4 py-3">沟通人</th>
-              <th className="px-4 py-3">时间</th>
-              <th className="px-4 py-3 text-right">操作</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 bg-white">
-            {records.map((item) => (
-              <tr key={item.id}>
-                <td className="px-4 py-3 font-medium">{item.student.name}</td>
-                <td className="px-4 py-3">{item.student.classRoom?.name || "未分班"}</td>
-                <td className="px-4 py-3">{item.target}</td>
-                <td className="px-4 py-3">{methodLabels[item.method]}</td>
-                <td className="px-4 py-3">{item.content}</td>
-                <td className="px-4 py-3">{item.followUp || "-"}</td>
-                <td className="px-4 py-3">{item.communicator}</td>
-                <td className="px-4 py-3">{displayDateTime(item.contactedAt)}</td>
-                <td className="px-4 py-3">
-                  <form action={deleteCommunication.bind(null, item.id)} className="flex justify-end">
-                    <DeleteButton />
-                  </form>
-                </td>
+      {records.length === 0 ? (
+        <EmptyText />
+      ) : (
+        <TableShell>
+          <table className="min-w-full divide-y divide-slate-200 text-sm">
+            <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
+              <tr>
+                <th className="px-4 py-3">学生</th>
+                <th className="px-4 py-3">班级</th>
+                <th className="px-4 py-3">对象</th>
+                <th className="px-4 py-3">方式</th>
+                <th className="px-4 py-3">内容</th>
+                <th className="px-4 py-3">后续跟进</th>
+                <th className="px-4 py-3">沟通人</th>
+                <th className="px-4 py-3">时间</th>
+                <th className="px-4 py-3 text-right">操作</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </TableShell>
+            </thead>
+            <tbody className="divide-y divide-slate-100 bg-white">
+              {records.map((item) => (
+                <tr key={item.id}>
+                  <td className="px-4 py-3 font-medium">{displayValue(item.student.name)}</td>
+                  <td className="px-4 py-3">{item.student.classRoom?.name || "未分班"}</td>
+                  <td className="px-4 py-3">{displayValue(item.target)}</td>
+                  <td className="px-4 py-3">{methodLabels[item.method] || displayValue(item.method)}</td>
+                  <td className="px-4 py-3">{displayValue(item.content)}</td>
+                  <td className="px-4 py-3">{displayValue(item.followUp)}</td>
+                  <td className="px-4 py-3">{displayValue(item.communicator)}</td>
+                  <td className="px-4 py-3">{displayDateTime(item.contactedAt)}</td>
+                  <td className="px-4 py-3 text-right">
+                    <MoreActions>
+                      <form action={deleteCommunication.bind(null, item.id)}>
+                        <button className={dangerMenuItemClass}>
+                          <Trash2 size={14} />
+                          删除
+                        </button>
+                      </form>
+                    </MoreActions>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </TableShell>
+      )}
     </DashboardLayout>
   );
 }
