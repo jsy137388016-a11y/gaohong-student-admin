@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard-layout";
-import { AddButton, DeleteButton, Field, inputClass, PageTitle, Panel, TableShell, textareaClass } from "@/components/ui";
+import { DeleteButton, PageTitle, TableShell } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import { displayDate, scoreTotalFromSubjects } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
-import { createExam, deleteExam } from "./actions";
+import { deleteExam } from "./actions";
+import { ExamCreateModal } from "./ExamCreateModal";
 
 export default async function ExamsPage() {
   const user = await requireUser();
@@ -26,11 +27,14 @@ export default async function ExamsPage() {
 
   return (
     <DashboardLayout user={user}>
-      <PageTitle title="成绩管理" description="创建考试，录入各科成绩，查看总分和排名。" />
-      <div className="mb-6 grid gap-6 xl:grid-cols-[1fr_360px]">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <PageTitle title="成绩管理" description="创建考试，录入各科成绩，查看总分和排名。" />
+        <ExamCreateModal />
+      </div>
+      <div className="mb-6">
         <TableShell>
           <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
+            <thead className="bg-slate-50 text-left text-xs font-semibold text-slate-500">
               <tr>
                 <th className="px-4 py-3">考试</th>
                 <th className="px-4 py-3">日期</th>
@@ -61,7 +65,7 @@ export default async function ExamsPage() {
                           查看 <ArrowRight size={14} />
                         </Link>
                         <form action={deleteExam.bind(null, exam.id)}>
-                          <DeleteButton />
+                          <DeleteButton confirmText="确认删除该考试吗？该考试下的成绩记录也会一起删除。" />
                         </form>
                       </div>
                     </td>
@@ -71,32 +75,6 @@ export default async function ExamsPage() {
             </tbody>
           </table>
         </TableShell>
-        <Panel title="新增考试">
-          <form action={createExam} className="grid gap-4">
-            <Field label="考试名称" required>
-              <input name="name" required placeholder="三月月考" className={inputClass} />
-            </Field>
-            <Field label="考试日期" required>
-              <input type="date" name="examDate" required className={inputClass} />
-            </Field>
-            <Field label="年级" required>
-              <input name="grade" required placeholder="高三" className={inputClass} />
-            </Field>
-            <Field label="考试类型" required>
-              <select name="type" required className={inputClass}>
-                <option value="月考">月考</option>
-                <option value="模拟考">模拟考</option>
-                <option value="周测">周测</option>
-                <option value="限时训练">限时训练</option>
-                <option value="日常测验">日常测验</option>
-              </select>
-            </Field>
-            <Field label="备注">
-              <textarea name="remark" className={textareaClass} />
-            </Field>
-            <AddButton>新增考试</AddButton>
-          </form>
-        </Panel>
       </div>
     </DashboardLayout>
   );

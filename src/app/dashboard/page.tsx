@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { AlertCircle, ArrowRight, BookOpen, CalendarDays, MessageSquareWarning, School, Users } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard-layout";
-import { EmptyText, PageTitle, Panel } from "@/components/ui";
+import { EmptyText, Panel } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
-import { displayDateTime, scoreTotalFromSubjects } from "@/lib/format";
+import { displayDateTime } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { FollowUpItem } from "./FollowUpItem";
 
@@ -21,26 +21,28 @@ function StatCard({
   tone: "blue" | "emerald" | "amber" | "red" | "violet";
 }) {
   const tones = {
-    blue: "border-blue-100 bg-blue-50 text-blue-700",
-    emerald: "border-emerald-100 bg-emerald-50 text-emerald-700",
-    amber: "border-amber-100 bg-amber-50 text-amber-700",
-    red: "border-red-100 bg-red-50 text-red-700",
-    violet: "border-violet-100 bg-violet-50 text-violet-700"
+    blue: "border-blue-100 bg-blue-50 text-blue-700 group-hover:bg-blue-100",
+    emerald: "border-emerald-100 bg-emerald-50 text-emerald-700 group-hover:bg-emerald-100",
+    amber: "border-amber-100 bg-amber-50 text-amber-700 group-hover:bg-amber-100",
+    red: "border-red-100 bg-red-50 text-red-700 group-hover:bg-red-100",
+    violet: "border-violet-100 bg-violet-50 text-violet-700 group-hover:bg-violet-100"
   };
 
   return (
-    <Link href={href} className="group rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md">
-      <div className="flex items-center justify-between">
+    <Link href={href} className="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm ring-1 ring-transparent transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md hover:ring-brand-100">
+      <div className="flex items-start justify-between gap-4">
         <div>
           <div className="text-sm font-medium text-slate-500">{title}</div>
           <div className="mt-3 text-4xl font-semibold tracking-tight text-slate-950">{value}</div>
+          <div className="mt-2 text-xs text-slate-400">点击查看明细数据</div>
         </div>
-        <div className={`flex h-12 w-12 items-center justify-center rounded-lg border ${tones[tone]}`}>
+        <div className={`flex h-12 w-12 items-center justify-center rounded-xl border transition-colors ${tones[tone]}`}>
           <Icon size={22} />
         </div>
       </div>
-      <div className="mt-4 flex items-center gap-1 text-xs font-medium text-slate-400 group-hover:text-brand-700">
-        查看详情 <ArrowRight size={13} />
+      <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-3 text-xs font-medium text-slate-400 group-hover:text-brand-700">
+        <span>进入模块</span>
+        <ArrowRight size={13} />
       </div>
     </Link>
   );
@@ -113,7 +115,18 @@ export default async function DashboardPage() {
 
   return (
     <DashboardLayout user={user}>
-      <PageTitle title="首页数据看板" description="快速查看学校今日重点数据和最近待跟进事项。" />
+      <div className="mb-7 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <div className="text-sm font-medium text-brand-700">运营概览</div>
+            <h1 className="mt-2 text-[28px] font-semibold leading-tight text-slate-950">首页数据看板</h1>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">快速查看学校今日重点数据、风险提醒和最近待跟进事项。</p>
+          </div>
+          <div className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-500">
+            当前登录：<span className="font-medium text-slate-900">{user.name}</span>
+          </div>
+        </div>
+      </div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <StatCard title="学生总数" value={studentCount} icon={Users} href="/students" tone="blue" />
         <StatCard title="班级总数" value={classCount} icon={School} href="/classes" tone="emerald" />

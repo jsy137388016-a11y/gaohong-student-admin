@@ -80,18 +80,20 @@ export default async function DisciplinePage({ searchParams }: PageProps) {
       <div className="mb-6 grid gap-6">
         <Panel title="查询筛选">
           <FilterBar>
-          <form className="grid gap-3 md:grid-cols-[260px_220px_180px_auto_auto] md:items-center" action="/discipline">
-            <StudentSearchSelect students={students} name="studentId" placeholder="搜索学生姓名/手机号/班级" />
-            <select name="classId" defaultValue={classId} className={inputClass}>
-              <option value="">全部班级</option>
-              {classes.map((item) => (
-                <option key={item.id} value={item.id}>{item.grade} {item.name}</option>
-              ))}
-            </select>
-            <input type="date" name="date" defaultValue={date} className={inputClass} />
-            <SearchButton />
+          <div className="grid gap-3 md:grid-cols-[260px_220px_180px_auto_auto] md:items-center">
+            <form className="contents" action="/discipline">
+              <StudentSearchSelect students={students} name="studentId" placeholder="搜索学生姓名/手机号/班级" />
+              <select name="classId" defaultValue={classId} className={inputClass}>
+                <option value="">全部班级</option>
+                {classes.map((item) => (
+                  <option key={item.id} value={item.id}>{item.grade} {item.name}</option>
+                ))}
+              </select>
+              <input type="date" name="date" defaultValue={date} className={inputClass} />
+              <SearchButton />
+            </form>
             <DisciplineCreateForm students={students} userName={user.name} />
-          </form>
+          </div>
           </FilterBar>
         </Panel>
       </div>
@@ -101,7 +103,7 @@ export default async function DisciplinePage({ searchParams }: PageProps) {
       ) : (
         <TableShell>
           <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
+            <thead className="bg-slate-50 text-left text-xs font-semibold text-slate-500">
               <tr>
                 <th className="px-5 py-3">学生</th>
                 <th className="px-5 py-3">班级</th>

@@ -18,9 +18,10 @@ export async function createClass(formData: FormData) {
       }
     });
     revalidatePath("/classes");
+    return { success: true as const };
   } catch (error) {
     console.error("createClass error:", error);
-    throw new Error("创建班级失败：" + (error instanceof Error ? error.message : "未知错误"));
+    return { success: false as const, error: "创建班级失败：" + (error instanceof Error ? error.message : "未知错误") };
   }
 }
 
@@ -37,7 +38,7 @@ export async function updateClass(id: number, formData: FormData) {
       }
     });
     revalidatePath("/classes");
-    redirect("/classes");
+    redirect("/classes?notice=班级信息已更新");
   } catch (error) {
     // redirect() throws a special error, re-throw it
     if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
@@ -70,7 +71,9 @@ export async function deactivateClass(id: number) {
 
     revalidatePath("/classes");
     revalidatePath("/students");
+    redirect("/classes?notice=班级已停用，学生已转入暂不分班");
   } catch (error) {
+    if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
     console.error("deactivateClass error:", error);
     throw new Error("停用班级失败：" + (error instanceof Error ? error.message : "未知错误"));
   }
@@ -129,7 +132,9 @@ export async function transferClassStudent(studentId: number, currentClassId: st
     revalidatePath(classPath(currentClassId));
     revalidatePath("/classes");
     revalidatePath("/students");
+    redirect(`${classPath(currentClassId)}?notice=学生已换班`);
   } catch (error) {
+    if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
     console.error("transferClassStudent error:", error);
     throw new Error("换班失败：" + (error instanceof Error ? error.message : "未知错误"));
   }
@@ -157,7 +162,9 @@ export async function withdrawClassStudent(studentId: number, currentClassId: st
     revalidatePath("/classes");
     revalidatePath("/students");
     revalidatePath("/focus");
+    redirect(`${classPath(currentClassId)}?notice=学生已标记退学`);
   } catch (error) {
+    if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
     console.error("withdrawClassStudent error:", error);
     throw new Error("退学操作失败：" + (error instanceof Error ? error.message : "未知错误"));
   }
@@ -183,7 +190,9 @@ export async function deleteClassStudent(studentId: number, currentClassId: stri
     revalidatePath("/classes");
     revalidatePath("/students");
     revalidatePath("/focus");
+    redirect(`${classPath(currentClassId)}?notice=学生已删除`);
   } catch (error) {
+    if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
     console.error("deleteClassStudent error:", error);
     throw new Error("删除失败：" + (error instanceof Error ? error.message : "未知错误"));
   }

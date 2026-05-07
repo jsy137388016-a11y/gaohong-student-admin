@@ -417,7 +417,7 @@ function ClassScoreImportModal({ classId, className, grade, onClose }: ClassScor
               {exams.length > 0 && (
                 <div className="max-h-[300px] overflow-y-auto rounded border border-slate-200">
                   <table className="min-w-full divide-y divide-slate-200 text-sm">
-                    <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
+                    <thead className="bg-slate-50 text-left text-xs font-semibold text-slate-500">
                       <tr>
                         <th className="px-3 py-2">考试名称</th>
                         <th className="px-3 py-2">日期</th>
@@ -578,7 +578,7 @@ function ClassScoreImportModal({ classId, className, grade, onClose }: ClassScor
 
               <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
                 <table className="min-w-full divide-y divide-slate-200 text-sm">
-                  <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500 sticky top-0">
+                  <thead className="bg-slate-50 text-left text-xs font-semibold text-slate-500 sticky top-0">
                     <tr>
                       <th className="px-2 py-2">行号</th>
                       <th className="px-2 py-2">班级</th>

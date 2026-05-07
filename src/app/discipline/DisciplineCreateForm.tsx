@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Plus, X } from "lucide-react";
+import { Plus } from "lucide-react";
 import { StudentSearchSelect } from "@/components/StudentSearchSelect";
-import { Field, inputClass, textareaClass } from "@/components/ui";
+import { Field, inputClass, ModalShell, textareaClass } from "@/components/ui";
 import { createDiscipline } from "./actions";
 
 export function DisciplineCreateForm({
@@ -30,7 +30,7 @@ export function DisciplineCreateForm({
       const result = await createDiscipline(formData);
       if (result.success) {
         setOpen(false);
-        window.location.href = "/discipline";
+        window.location.href = "/discipline?notice=违纪记录已新增";
       } else {
         setError(result.error || "提交失败，请稍后重试");
       }
@@ -49,19 +49,8 @@ export function DisciplineCreateForm({
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={handleClose}>
-          <div
-            className="mx-4 w-full max-w-lg rounded-lg bg-white shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-              <h3 className="text-base font-semibold text-slate-900">新增违纪记录</h3>
-              <button type="button" onClick={handleClose} className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
-                <X size={18} />
-              </button>
-            </div>
-
-            <form action={handleSubmit} className="max-h-[70vh] overflow-y-auto p-5">
+        <ModalShell open={open} title="新增违纪记录" onClose={handleClose} maxWidth="max-w-xl">
+            <form action={handleSubmit}>
               <div className="grid gap-4">
                 <Field label="学生" required>
                   <StudentSearchSelect students={students} name="studentId" required />
@@ -119,8 +108,7 @@ export function DisciplineCreateForm({
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+        </ModalShell>
       )}
     </>
   );

@@ -240,7 +240,7 @@ export function StudentImportPanel() {
             {/* 预览表格 */}
             <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
               <table className="min-w-full divide-y divide-slate-200 text-sm">
-                <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500 sticky top-0">
+                <thead className="bg-slate-50 text-left text-xs font-semibold text-slate-500 sticky top-0">
                   <tr>
                     <th className="px-3 py-2">行号</th>
                     <th className="px-3 py-2">班级</th>

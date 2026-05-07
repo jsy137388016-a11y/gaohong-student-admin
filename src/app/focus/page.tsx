@@ -88,7 +88,7 @@ export default async function FocusPage() {
         <Panel title="风险预警">
           <TableShell>
             <table className="min-w-full divide-y divide-slate-200 text-sm">
-              <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
+              <thead className="bg-slate-50 text-left text-xs font-semibold text-slate-500">
                 <tr>
                   <th className="px-4 py-3">学生</th>
                   <th className="px-4 py-3">班级</th>
@@ -154,7 +154,7 @@ export default async function FocusPage() {
           <Panel title="标记关注学生">
             <TableShell>
               <table className="min-w-full divide-y divide-slate-200 text-sm">
-                <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
+                <thead className="bg-slate-50 text-left text-xs font-semibold text-slate-500">
                   <tr>
                     <th className="px-4 py-3">学生</th>
                     <th className="px-4 py-3">性别</th>

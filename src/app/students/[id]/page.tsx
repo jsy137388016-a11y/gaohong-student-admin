@@ -297,7 +297,7 @@ export default async function StudentDetailPage({ params }: PageProps) {
               ) : (
                 <TableShell>
                   <table className="min-w-full divide-y divide-slate-200 text-sm">
-                    <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
+                    <thead className="bg-slate-50 text-left text-xs font-semibold text-slate-500">
                       <tr>
                         <th className="px-4 py-3">日期</th>
                         <th className="px-4 py-3">类型</th>

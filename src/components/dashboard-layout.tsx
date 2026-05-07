@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   BookOpen,
@@ -13,10 +12,12 @@ import {
   Star,
   Users
 } from "lucide-react";
+import { ActionToast } from "@/components/action-toast";
+import { MainNav, type NavItem } from "@/components/main-nav";
 import { logout } from "@/lib/auth";
 import { roleLabels } from "@/lib/format";
 
-const navItems = [
+const navItems: NavItem[] = [
   { href: "/dashboard", label: "首页", icon: Home },
   { href: "/students", label: "学生管理", icon: Users },
   { href: "/classes", label: "班级管理", icon: School },
@@ -49,32 +50,18 @@ export function DashboardLayout({
             <GraduationCap size={22} />
           </div>
           <div>
-            <div className="text-base font-semibold text-slate-950">高宏学生管理</div>
-            <div className="text-xs text-slate-500">学校后台系统</div>
+            <div className="text-base font-semibold text-slate-950">高宏学生管理系统</div>
+            <div className="text-xs text-slate-500">学校运营管理平台</div>
           </div>
         </div>
-        <nav className="space-y-1 px-3 py-4">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium text-slate-700 transition-colors hover:bg-brand-50 hover:text-brand-700"
-              >
-                <Icon size={18} />
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
+        <MainNav items={navItems} />
       </aside>
 
       <div className="lg:pl-64">
         <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200 bg-white/95 px-4 shadow-sm backdrop-blur lg:px-8">
           <div className="lg:hidden">
-            <div className="text-base font-semibold text-slate-950">高宏学生管理</div>
-            <div className="text-xs text-slate-500">后台系统</div>
+            <div className="text-base font-semibold text-slate-950">高宏学生管理系统</div>
+            <div className="text-xs text-slate-500">学校运营管理平台</div>
           </div>
           <div className="hidden text-sm text-slate-500 lg:block">艺考文补机构学生管理后台</div>
           <div className="flex items-center gap-4">
@@ -92,19 +79,10 @@ export function DashboardLayout({
             </form>
           </div>
         </header>
+        <ActionToast />
 
         <div className="border-b border-slate-200 bg-white px-4 py-2 lg:hidden">
-          <div className="flex gap-2 overflow-x-auto">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="shrink-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </div>
+          <MainNav items={navItems} mobile />
         </div>
 
         <main className="mx-auto max-w-[1440px] px-4 py-8 lg:px-8">{children}</main>

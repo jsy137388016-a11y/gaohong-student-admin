@@ -12,7 +12,7 @@ const roleValues = ["admin", "principal", "minister", "moral_director", "head_te
 export async function createUserAccount(formData: FormData) {
   const currentUser = await requireUser();
   if (!["admin", "principal"].includes(currentUser.role)) {
-    redirect("/settings?accountError=只有管理员和校长可以新增账号");
+    redirect("/settings?error=只有管理员和校长可以新增账号");
   }
 
   const username = textValue(formData, "username")!;
@@ -21,16 +21,16 @@ export async function createUserAccount(formData: FormData) {
   const role = textValue(formData, "role")!;
 
   if (!roleValues.includes(role as (typeof roleValues)[number])) {
-    redirect("/settings?accountError=角色不正确");
+    redirect("/settings?error=角色不正确");
   }
 
   if (password.length < 6) {
-    redirect("/settings?accountError=密码至少需要6位");
+    redirect("/settings?error=密码至少需要6位");
   }
 
   const existing = await prisma.user.findUnique({ where: { username } });
   if (existing) {
-    redirect("/settings?accountError=账号已存在，请换一个账号名");
+    redirect("/settings?error=账号已存在，请换一个账号名");
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
@@ -44,5 +44,5 @@ export async function createUserAccount(formData: FormData) {
   });
 
   revalidatePath("/settings");
-  redirect("/settings?accountCreated=1");
+  redirect("/settings?notice=账号已创建成功");
 }

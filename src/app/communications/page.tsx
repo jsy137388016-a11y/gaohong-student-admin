@@ -1,10 +1,10 @@
-import { Trash2 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard-layout";
-import { AddButton, dangerMenuItemClass, EmptyText, Field, FilterBar, inputClass, MoreActions, PageTitle, Panel, SearchButton, TableShell, textareaClass } from "@/components/ui";
+import { ConfirmButton, EmptyText, FilterBar, inputClass, MoreActions, PageTitle, Panel, SearchButton, TableShell } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import { displayDateTime, displayValue, firstValue, methodLabels } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
-import { createCommunication, deleteCommunication } from "./actions";
+import { deleteCommunication } from "./actions";
+import { CommunicationCreateModal } from "./CommunicationCreateModal";
 
 type PageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
@@ -43,8 +43,11 @@ export default async function CommunicationsPage({ searchParams }: PageProps) {
 
   return (
     <DashboardLayout user={user}>
-      <PageTitle title="家校沟通" description="记录与家长的沟通对象、方式、内容和后续跟进事项。" />
-      <div className="mb-6 grid gap-6 xl:grid-cols-[1fr_380px]">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <PageTitle title="家校沟通" description="记录与家长的沟通对象、方式、内容和后续跟进事项。" />
+        <CommunicationCreateModal students={students} userName={user.name} />
+      </div>
+      <div className="mb-6 grid gap-6">
         <Panel title="查看学生沟通记录">
           <FilterBar>
           <form className="grid gap-3 md:grid-cols-[260px_auto] md:items-center" action="/communications">
@@ -58,45 +61,6 @@ export default async function CommunicationsPage({ searchParams }: PageProps) {
           </form>
           </FilterBar>
         </Panel>
-        <Panel title="新增沟通记录">
-          <form action={createCommunication} className="grid gap-4">
-            <Field label="学生" required>
-              <select name="studentId" required className={inputClass}>
-                {students.map((item) => (
-                  <option key={item.id} value={item.id}>{item.name} {item.classRoom ? `(${item.classRoom.name})` : ""}</option>
-                ))}
-              </select>
-            </Field>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="沟通对象" required>
-                <input name="target" required placeholder="父亲/母亲" className={inputClass} />
-              </Field>
-              <Field label="沟通方式" required>
-                <select name="method" required className={inputClass}>
-                  {Object.entries(methodLabels).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
-                  ))}
-                </select>
-              </Field>
-            </div>
-            <Field label="沟通内容" required>
-              <textarea name="content" required className={textareaClass} />
-            </Field>
-            <Field label="家长反馈">
-              <textarea name="parentFeedback" placeholder="家长的主要反馈" className={textareaClass} />
-            </Field>
-            <Field label="后续跟进事项">
-              <textarea name="followUp" placeholder="需要班主任继续跟进的事项" className={textareaClass} />
-            </Field>
-            <Field label="沟通人" required>
-              <input name="communicator" required defaultValue={user.name} className={inputClass} />
-            </Field>
-            <Field label="沟通时间" required>
-              <input type="datetime-local" name="contactedAt" required defaultValue={new Date().toISOString().slice(0, 16)} className={inputClass} />
-            </Field>
-            <AddButton>新增沟通</AddButton>
-          </form>
-        </Panel>
       </div>
 
       {records.length === 0 ? (
@@ -104,7 +68,7 @@ export default async function CommunicationsPage({ searchParams }: PageProps) {
       ) : (
         <TableShell>
           <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
+            <thead className="bg-slate-50 text-left text-xs font-semibold text-slate-500">
               <tr>
                 <th className="px-5 py-3">学生</th>
                 <th className="px-5 py-3">班级</th>
@@ -131,10 +95,7 @@ export default async function CommunicationsPage({ searchParams }: PageProps) {
                   <td className="px-5 py-3 text-right">
                     <MoreActions>
                       <form action={deleteCommunication.bind(null, item.id)}>
-                        <button className={dangerMenuItemClass}>
-                          <Trash2 size={14} />
-                          删除
-                        </button>
+                        <ConfirmButton label="删除" confirmText="确认删除该沟通记录吗？" />
                       </form>
                     </MoreActions>
                   </td>

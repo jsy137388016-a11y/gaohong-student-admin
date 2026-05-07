@@ -49,7 +49,7 @@ export async function updateStudent(id: number, formData: FormData) {
       }
     });
     revalidatePath("/students");
-    redirect("/students");
+    redirect("/students?notice=学生信息已更新");
   } catch (error) {
     if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
     console.error("updateStudent error:", error);
@@ -73,7 +73,9 @@ export async function deleteStudent(id: number) {
     });
     revalidatePath("/students");
     revalidatePath("/focus");
+    redirect("/students?notice=学生已删除");
   } catch (error) {
+    if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
     console.error("deleteStudent error:", error);
     throw new Error("删除学生失败：" + (error instanceof Error ? error.message : "未知错误"));
   }
