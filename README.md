@@ -2,7 +2,7 @@
 
 这是一个面向艺考文补机构/学校的网页版学生管理后台，用于管理学生档案、班级、考勤、纪律、成绩、家校沟通、重点关注和后台账号。
 
-当前主分支按 **PostgreSQL + Next.js standalone** 方向运行。仓库中保留了部分 Cloudflare/D1 迁移资料，作为历史部署参考；本地开发和当前构建以 `prisma/schema.prisma` 的 PostgreSQL 配置为准。
+当前主分支按 **PostgreSQL + Next.js standalone** 方向运行，适合部署到 VPS、腾讯云轻量服务器、Docker、PM2 或标准 Node.js 环境。Cloudflare Workers/OpenNext/D1 已不再作为当前主部署方案，历史资料统一保存在 `docs/legacy-cloudflare`。
 
 ## 技术栈
 
@@ -56,6 +56,15 @@ npm run dev
 npm run build
 ```
 
+如果要使用 Next.js standalone 产物部署：
+
+```bash
+npm run build:standalone
+npm run start:standalone
+```
+
+完整生产部署步骤见 `DEPLOY.md`。
+
 ## 默认账号
 
 - 账号：admin
@@ -106,9 +115,8 @@ npm run build
 - `prisma/schema.prisma`：PostgreSQL 数据库模型
 - `prisma/seed.ts`：初始化演示数据
 - `scripts/seed-pg.ts`：从导出数据导入 PostgreSQL 的辅助脚本
+- `DEPLOY.md`：VPS、PM2、Nginx、Docker 部署说明
 
-## Cloudflare/D1 资料
+## 历史 Cloudflare/D1 资料
 
-仓库中仍保留 `DEPLOY_CLOUDFLARE.md`、`wrangler.jsonc`、`prisma/init.sql` 和 D1 迁移 SQL，供历史版本或迁移参考。当前主线不再把 Cloudflare OpenNext 配置纳入 TypeScript 检查，避免在 PostgreSQL standalone 开发时引入无关依赖。
-<!-- trigger cloudflare build -->
-
+旧版 Cloudflare Workers/OpenNext/D1 文件已移到 `docs/legacy-cloudflare`，仅供历史参考。当前部署不要使用 `wrangler deploy`，也不再需要 `.open-next/worker.js`。

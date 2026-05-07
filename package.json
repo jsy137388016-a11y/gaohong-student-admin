@@ -5,7 +5,10 @@
   "scripts": {
     "dev": "NEXT_TELEMETRY_DISABLED=1 NEXT_TEST_WASM_DIR=node_modules/@next/swc-wasm-nodejs next dev -p 3001",
     "build": "prisma generate && NEXT_TELEMETRY_DISABLED=1 NEXT_TEST_WASM_DIR=node_modules/@next/swc-wasm-nodejs next build",
-    "start": "next start",
+    "standalone:prepare": "mkdir -p .next/standalone/.next && cp -R .next/static .next/standalone/.next/ && cp -R public .next/standalone/",
+    "build:standalone": "prisma generate && NEXT_TELEMETRY_DISABLED=1 NEXT_TEST_WASM_DIR=node_modules/@next/swc-wasm-nodejs next build && mkdir -p .next/standalone/.next && cp -R .next/static .next/standalone/.next/ && cp -R public .next/standalone/",
+    "start": "next start -p 3001",
+    "start:standalone": "node .next/standalone/server.js",
     "lint": "next lint",
     "prisma:generate": "prisma generate",
     "db:push": "prisma db push",

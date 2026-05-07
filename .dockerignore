@@ -1,0 +1,12 @@
+node_modules
+.next
+.open-next
+.wrangler
+.tools
+.git
+.env
+.env.local
+.env.production
+npm-debug.log
+*.zip
+*.tsbuildinfo
