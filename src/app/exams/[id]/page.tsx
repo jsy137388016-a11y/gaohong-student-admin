@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertTriangle, ArrowLeft, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { DeleteButton, Field, inputClass, PageTitle, Panel, TableShell } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
@@ -128,7 +128,7 @@ export default async function ExamDetailPage({ params, searchParams }: PageProps
 
       <TableShell>
         <table className="min-w-full divide-y divide-slate-200 text-sm">
-          <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
+          <thead className="bg-slate-50 text-left text-xs font-semibold text-slate-500">
             <tr>
               <th className="px-4 py-3">排名</th>
               <th className="px-4 py-3">学生</th>
@@ -162,13 +162,7 @@ export default async function ExamDetailPage({ params, searchParams }: PageProps
                     <div className="flex justify-end gap-1">
                       {item.scores.map((s: any) => (
                         <form key={s.id} action={deleteScore.bind(null, s.id, exam.id)} className="inline">
-                          <button
-                            type="submit"
-                            className="inline-flex h-6 items-center rounded border border-red-200 px-1.5 text-xs text-red-600 hover:bg-red-50"
-                            title={`删除${s.subject}成绩`}
-                          >
-                            <Trash2 size={10} />
-                          </button>
+                          <DeleteButton confirmText={`确认删除${s.subject}成绩吗？`} />
                         </form>
                       ))}
                     </div>

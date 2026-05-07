@@ -20,7 +20,9 @@ export async function createExam(formData: FormData) {
     });
     revalidatePath("/exams");
     revalidatePath("/dashboard");
+    redirect("/exams?notice=考试已新增");
   } catch (error) {
+    if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
     console.error("createExam error:", error);
     throw new Error("创建考试失败：" + (error instanceof Error ? error.message : "未知错误"));
   }
@@ -32,7 +34,9 @@ export async function deleteExam(id: number) {
     await prisma.exam.delete({ where: { id } });
     revalidatePath("/exams");
     revalidatePath("/dashboard");
+    redirect("/exams?notice=考试已删除");
   } catch (error) {
+    if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
     console.error("deleteExam error:", error);
     throw new Error("删除考试失败：" + (error instanceof Error ? error.message : "未知错误"));
   }
@@ -43,7 +47,7 @@ export async function deleteScore(scoreId: number, examId: number) {
     await requireUser();
     await prisma.score.delete({ where: { id: scoreId } });
     revalidatePath(`/exams/${examId}`);
-    redirect(`/exams/${examId}`);
+    redirect(`/exams/${examId}?notice=成绩已删除`);
   } catch (error) {
     if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
     console.error("deleteScore error:", error);

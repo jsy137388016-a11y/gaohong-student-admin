@@ -17,7 +17,7 @@ import { StudentImportPanel } from "@/components/student-import";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { boardingLabels, displayValue, firstValue, genderLabels } from "@/lib/format";
-import { createStudent, deleteStudent } from "./actions";
+import { deleteStudent } from "./actions";
 import { StudentCreateModal } from "./StudentCreateModal";
 import { Pagination } from "./Pagination";
 
@@ -128,20 +128,22 @@ export default async function StudentsPage({ searchParams }: PageProps) {
       <div className="mb-6 grid gap-6">
         <Panel title="查询筛选">
           <FilterBar>
-          <form className="grid gap-3 md:grid-cols-[1fr_220px_auto_auto] md:items-center" action="/students">
-            <input name="q" defaultValue={q} placeholder="搜索姓名、手机、家长" className={inputClass} />
-            <select name="classId" defaultValue={classId} className={inputClass}>
-              <option value="">全部班级</option>
-              {classes.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.grade} {item.name}
-                </option>
-              ))}
-              {!isHeadTeacher ? <option value="unassigned">暂不分班</option> : null}
-            </select>
-            <SearchButton />
+          <div className="grid gap-3 md:grid-cols-[1fr_220px_auto_auto] md:items-center">
+            <form className="contents" action="/students">
+              <input name="q" defaultValue={q} placeholder="搜索姓名、手机、家长" className={inputClass} />
+              <select name="classId" defaultValue={classId} className={inputClass}>
+                <option value="">全部班级</option>
+                {classes.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.grade} {item.name}
+                  </option>
+                ))}
+                {!isHeadTeacher ? <option value="unassigned">暂不分班</option> : null}
+              </select>
+              <SearchButton />
+            </form>
             <StudentCreateModal classes={classes} />
-          </form>
+          </div>
           </FilterBar>
           <StudentImportPanel />
         </Panel>
@@ -159,7 +161,7 @@ export default async function StudentsPage({ searchParams }: PageProps) {
         <>
           <TableShell>
           <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
+            <thead className="bg-slate-50 text-left text-xs font-semibold text-slate-500">
               <tr>
                 <th className="px-5 py-3">姓名</th>
                 <th className="px-5 py-3">性别</th>

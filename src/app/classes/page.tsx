@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { Edit3, Eye } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard-layout";
-import { AddButton, Field, inputClass, PageTitle, Panel, TableShell, textareaClass } from "@/components/ui";
+import { EmptyText, PageTitle, TableShell } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { createClass, deactivateClass } from "./actions";
+import { deactivateClass } from "./actions";
+import { ClassCreateModal } from "./ClassCreateModal";
 import { DeactivateClassButton } from "./deactivate-button";
 
 export default async function ClassesPage() {
@@ -50,11 +51,17 @@ export default async function ClassesPage() {
 
   return (
     <DashboardLayout user={user}>
-      <PageTitle title="班级管理" description="创建班级，维护班主任、年级和备注。学生档案中可以绑定班级。" />
-      <div className="mb-6 grid gap-6 xl:grid-cols-[1fr_360px]">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <PageTitle title="班级管理" description="创建班级，维护班主任、年级和备注。学生档案中可以绑定班级。" />
+        {!isHeadTeacher ? <ClassCreateModal /> : null}
+      </div>
+      <div className="mb-6">
+        {classes.length === 0 && unassignedCount === 0 ? (
+          <EmptyText />
+        ) : (
         <TableShell>
           <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
+            <thead className="bg-slate-50 text-left text-xs font-semibold text-slate-500">
               <tr>
                 <th className="px-4 py-3">班级名称</th>
                 <th className="px-4 py-3">年级</th>
@@ -123,24 +130,7 @@ export default async function ClassesPage() {
             </tbody>
           </table>
         </TableShell>
-
-        <Panel title="新增班级">
-          <form action={createClass} className="grid gap-4">
-            <Field label="班级名称" required>
-              <input name="name" required placeholder="艺考冲刺1班" className={inputClass} />
-            </Field>
-            <Field label="年级" required>
-              <input name="grade" required placeholder="高三" className={inputClass} />
-            </Field>
-            <Field label="班主任" required>
-              <input name="headTeacher" required className={inputClass} />
-            </Field>
-            <Field label="备注">
-              <textarea name="remark" className={textareaClass} />
-            </Field>
-            <AddButton>新增班级</AddButton>
-          </form>
-        </Panel>
+        )}
       </div>
     </DashboardLayout>
   );

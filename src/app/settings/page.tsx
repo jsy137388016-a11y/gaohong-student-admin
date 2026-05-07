@@ -38,7 +38,7 @@ export default async function SettingsPage({ searchParams }: PageProps) {
       <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
         <Panel title="账号角色">
           <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
+            <thead className="bg-slate-50 text-left text-xs font-semibold text-slate-500">
               <tr>
                 <th className="px-4 py-3">账号</th>
                 <th className="px-4 py-3">姓名</th>

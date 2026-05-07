@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition } from "react";
+import { useState, useTransition } from "react";
 import { FileText } from "lucide-react";
 import { deleteGuaranteeLetter } from "./guarantee-letter-actions";
 
@@ -22,10 +22,15 @@ export function GuaranteeLetterItem({
   letter: Letter;
   studentId: number;
 }) {
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState("");
+
   async function handleDelete() {
+    setError("");
     if (!window.confirm("确认删除该保证书记录吗？")) return;
     startTransition(async () => {
-      await deleteGuaranteeLetter(letter.id, studentId);
+      const result = await deleteGuaranteeLetter(letter.id, studentId);
+      if (!result.success) setError(result.message);
     });
   }
 
@@ -62,12 +67,14 @@ export function GuaranteeLetterItem({
           <button
             type="button"
             onClick={handleDelete}
+            disabled={isPending}
             className="inline-flex h-7 items-center gap-1 rounded border border-red-200 px-2 text-xs font-medium text-red-600 hover:bg-red-50"
           >
-            删除
+            {isPending ? "删除中..." : "删除"}
           </button>
         </div>
       </div>
+      {error ? <div className="rounded bg-red-50 px-3 py-2 text-xs text-red-700">{error}</div> : null}
       {letter.remark && <div className="text-slate-600">{letter.remark}</div>}
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-400">
         {letter.uploadedBy && <span>上传人：{letter.uploadedBy}</span>}

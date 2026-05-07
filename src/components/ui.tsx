@@ -1,6 +1,8 @@
 "use client";
 
-import { MoreHorizontal, Plus, Save, Search, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { useFormStatus } from "react-dom";
+import { MoreHorizontal, Plus, Save, Search, Trash2, X } from "lucide-react";
 
 /**
  * 确认删除按钮（客户端组件）
@@ -25,10 +27,13 @@ export function ConfirmButton({
   variant?: "danger" | "warning";
   size?: "default" | "small";
 }) {
+  const { pending } = useFormStatus();
+
   return (
     <button
       type="button"
       onClick={(e) => {
+        if (pending) return;
         if (!window.confirm(confirmText)) {
           e.preventDefault();
           return;
@@ -37,6 +42,7 @@ export function ConfirmButton({
         const form = (e.currentTarget as HTMLButtonElement).closest("form");
         if (form) form.requestSubmit();
       }}
+      disabled={pending}
       className={`inline-flex items-center gap-1 rounded-lg border bg-white font-medium shadow-sm transition-colors hover:opacity-90 ${
         variant === "danger"
           ? "border-red-200 text-red-600 hover:bg-red-50"
@@ -48,7 +54,7 @@ export function ConfirmButton({
       }`}
     >
       <Trash2 size={14} />
-      {label}
+      {pending ? "处理中..." : label}
     </button>
   );
 }
@@ -68,10 +74,23 @@ export function PageTitle({
   );
 }
 
-export function Panel({ children, title }: { children: React.ReactNode; title?: string }) {
+export function Panel({
+  children,
+  title,
+  actions
+}: {
+  children: React.ReactNode;
+  title?: string;
+  actions?: React.ReactNode;
+}) {
   return (
     <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
-      {title ? <div className="border-b border-slate-200 px-5 py-4 text-sm font-semibold text-slate-950">{title}</div> : null}
+      {title || actions ? (
+        <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
+          {title ? <div className="text-sm font-semibold text-slate-950">{title}</div> : <div />}
+          {actions}
+        </div>
+      ) : null}
       <div className="p-5 lg:p-6">{children}</div>
     </section>
   );
@@ -104,35 +123,55 @@ export function Field({
 }
 
 export function PrimaryButton({ children = "保存" }: { children?: React.ReactNode }) {
+  const { pending } = useFormStatus();
   return (
-    <button className="inline-flex h-10 items-center gap-2 rounded-lg bg-brand-600 px-4 text-sm font-medium text-white shadow-sm transition-colors hover:bg-brand-700">
+    <button
+      disabled={pending}
+      className="inline-flex h-10 items-center gap-2 rounded-lg bg-brand-600 px-4 text-sm font-medium text-white shadow-sm transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
+    >
       <Save size={16} />
-      {children}
+      {pending ? "保存中..." : children}
     </button>
   );
 }
 
 export function AddButton({ children = "新增" }: { children?: React.ReactNode }) {
+  const { pending } = useFormStatus();
   return (
-    <button className="inline-flex h-10 items-center gap-2 rounded-lg bg-brand-600 px-4 text-sm font-medium text-white shadow-sm transition-colors hover:bg-brand-700">
+    <button
+      disabled={pending}
+      className="inline-flex h-10 items-center gap-2 rounded-lg bg-brand-600 px-4 text-sm font-medium text-white shadow-sm transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
+    >
       <Plus size={16} />
-      {children}
+      {pending ? "提交中..." : children}
     </button>
   );
 }
 
 export function SearchButton() {
+  const { pending } = useFormStatus();
   return (
-    <button className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50">
+    <button
+      disabled={pending}
+      className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+    >
       <Search size={16} />
-      查询
+      {pending ? "查询中..." : "查询"}
     </button>
   );
 }
 
-export function DeleteButton() {
+export function DeleteButton({ confirmText = "确认删除吗？" }: { confirmText?: string }) {
+  const { pending } = useFormStatus();
   return (
     <button
+      type="button"
+      disabled={pending}
+      onClick={(e) => {
+        if (pending) return;
+        if (!window.confirm(confirmText)) return;
+        e.currentTarget.closest("form")?.requestSubmit();
+      }}
       className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-red-200 bg-white text-red-600 shadow-sm transition-colors hover:bg-red-50"
       title="删除"
     >
@@ -162,7 +201,7 @@ export const dangerMenuItemClass =
 
 export function TableShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm [&_tbody_tr:nth-child(even)]:bg-slate-50/50 [&_tbody_tr]:transition-colors [&_tbody_tr:hover]:bg-brand-50/40 [&_td]:h-14 [&_thead]:bg-slate-100 [&_th]:h-12 [&_th]:whitespace-nowrap [&_th]:text-slate-600">
+    <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm [&_tbody_tr:nth-child(even)]:bg-slate-50/50 [&_tbody_tr]:transition-colors [&_tbody_tr:hover]:bg-brand-50/40 [&_td]:h-14 [&_thead]:bg-slate-100 [&_thead]:normal-case [&_th]:h-12 [&_th]:whitespace-nowrap [&_th]:normal-case [&_th]:text-slate-600">
       {children}
     </div>
   );
@@ -184,6 +223,39 @@ export function FilterBar({ children }: { children: React.ReactNode }) {
   return (
     <div className="rounded-lg border border-slate-200 bg-slate-50/80 p-4">
       {children}
+    </div>
+  );
+}
+
+export function ModalShell({
+  open,
+  title,
+  children,
+  onClose,
+  maxWidth = "max-w-2xl"
+}: {
+  open: boolean;
+  title: string;
+  children: React.ReactNode;
+  onClose: () => void;
+  maxWidth?: string;
+}) {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 py-6" onClick={onClose}>
+      <div
+        className={`flex max-h-[88vh] w-full ${maxWidth} flex-col overflow-hidden rounded-xl bg-white shadow-2xl ring-1 ring-slate-900/10`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+          <h3 className="text-base font-semibold text-slate-950">{title}</h3>
+          <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+            <X size={18} />
+          </button>
+        </div>
+        <div className="overflow-y-auto p-5">{children}</div>
+      </div>
     </div>
   );
 }

@@ -35,11 +35,16 @@ export async function createDiscipline(formData: FormData): Promise<{ success: b
 }
 
 export async function deleteDiscipline(id: number) {
-  await requireUser();
-  const record = await prisma.discipline.findUnique({ where: { id } });
-  if (!record) throw new Error("记录不存在");
-  await prisma.discipline.delete({ where: { id } });
-  revalidatePath("/discipline");
-  revalidatePath("/dashboard");
-  revalidatePath(`/students/${record.studentId}`);
+  try {
+    await requireUser();
+    const record = await prisma.discipline.findUnique({ where: { id } });
+    if (!record) throw new Error("记录不存在");
+    await prisma.discipline.delete({ where: { id } });
+    revalidatePath("/discipline");
+    revalidatePath("/dashboard");
+    revalidatePath(`/students/${record.studentId}`);
+  } catch (error) {
+    console.error("deleteDiscipline error:", error);
+    throw new Error("删除违纪记录失败：" + (error instanceof Error ? error.message : "未知错误"));
+  }
 }

@@ -1,8 +1,8 @@
 "use client";
 
-import { Plus, X } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useState, useTransition } from "react";
-import { Field, inputClass, textareaClass } from "@/components/ui";
+import { Field, inputClass, ModalShell, textareaClass } from "@/components/ui";
 import { createStudent } from "./actions";
 
 type ClassItem = { id: number; grade: string; name: string };
@@ -25,7 +25,7 @@ export function StudentCreateModal({ classes }: { classes: ClassItem[] }) {
       const result = await createStudent(formData);
       if (result?.success) {
         setOpen(false);
-        window.location.reload();
+        window.location.href = "/students?notice=学生已新增";
       } else {
         setError(result?.error || "新增失败");
       }
@@ -44,25 +44,8 @@ export function StudentCreateModal({ classes }: { classes: ClassItem[] }) {
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={handleClose}>
-          <div
-            className="mx-4 w-full max-w-lg rounded-lg bg-white shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* 标题栏 */}
-            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-              <h3 className="text-base font-semibold text-slate-900">新增学生</h3>
-              <button
-                type="button"
-                onClick={handleClose}
-                className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* 表单 */}
-            <form action={handleSubmit} className="max-h-[70vh] overflow-y-auto p-5">
+        <ModalShell open={open} title="新增学生" onClose={handleClose} maxWidth="max-w-2xl">
+            <form action={handleSubmit}>
               <div className="grid gap-4">
                 <Field label="姓名" required>
                   <input name="name" required className={inputClass} disabled={isPending} />
@@ -124,22 +107,21 @@ export function StudentCreateModal({ classes }: { classes: ClassItem[] }) {
                   type="button"
                   onClick={handleClose}
                   disabled={isPending}
-                  className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
                 >
                   取消
                 </button>
                 <button
                   type="submit"
                   disabled={isPending}
-                  className="inline-flex h-10 items-center gap-2 rounded bg-brand-600 px-4 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+                  className="inline-flex h-10 items-center gap-2 rounded-lg bg-brand-600 px-4 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
                 >
                   <Plus size={16} />
                   {isPending ? "提交中..." : "新增学生"}
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+        </ModalShell>
       )}
     </>
   );

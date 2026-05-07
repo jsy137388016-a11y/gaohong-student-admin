@@ -27,7 +27,7 @@ export default function LoginPage() {
               name="username"
               required
               autoComplete="username"
-              defaultValue="admin"
+              placeholder="请输入账号"
               className="h-11 w-full rounded border border-slate-300 px-3 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
             />
           </label>
@@ -38,7 +38,7 @@ export default function LoginPage() {
               type="password"
               required
               autoComplete="current-password"
-              defaultValue="admin123"
+              placeholder="请输入密码"
               className="h-11 w-full rounded border border-slate-300 px-3 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
             />
           </label>

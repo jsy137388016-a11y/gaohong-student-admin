@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/auth";
 import { attendanceLabels, displayDate, displayValue, firstValue } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { deleteAttendance } from "./actions";
+import { AttendanceBatchModal } from "./AttendanceBatchModal";
 import { AttendanceCreateModal } from "./AttendanceCreateModal";
 
 type PageProps = {
@@ -65,24 +66,27 @@ export default async function AttendancePage({ searchParams }: PageProps) {
 
   return (
     <DashboardLayout user={user}>
-      <PageTitle title="考勤管理" description="记录正常、迟到、请假、旷课、早退、未归寝，并支持多条件筛选。" />
+      <PageTitle title="考勤管理" description="记录正常、迟到、请假、旷课、早退、未归寝，并支持多条件筛选和按班级批量录入。" />
 
       {/* 查询筛选区域 */}
       <div className="mb-6 grid gap-6">
         <Panel title="查询筛选">
           <FilterBar>
-          <form className="grid gap-3 md:grid-cols-[180px_220px_220px_auto_auto] md:items-center" action="/attendance">
-            <input type="date" name="date" defaultValue={date} className={inputClass} />
-            <select name="classId" defaultValue={classId} className={inputClass}>
-              <option value="">全部班级</option>
-              {classes.map((item) => (
-                <option key={item.id} value={item.id}>{item.grade} {item.name}</option>
-              ))}
-            </select>
-            <StudentSearchSelect students={students} name="studentId" placeholder="搜索学生姓名/手机号/班级" />
-            <SearchButton />
+          <div className="grid gap-3 md:grid-cols-[180px_220px_220px_auto_auto_auto] md:items-center">
+            <form className="contents" action="/attendance">
+              <input type="date" name="date" defaultValue={date} className={inputClass} />
+              <select name="classId" defaultValue={classId} className={inputClass}>
+                <option value="">全部班级</option>
+                {classes.map((item) => (
+                  <option key={item.id} value={item.id}>{item.grade} {item.name}</option>
+                ))}
+              </select>
+              <StudentSearchSelect students={students} name="studentId" placeholder="搜索学生姓名/手机号/班级" />
+              <SearchButton />
+            </form>
             <AttendanceCreateModal students={students} userName={user.name} />
-          </form>
+            <AttendanceBatchModal classes={classes} students={students} userName={user.name} />
+          </div>
           </FilterBar>
         </Panel>
       </div>
@@ -92,7 +96,7 @@ export default async function AttendancePage({ searchParams }: PageProps) {
       ) : (
         <TableShell>
           <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
+            <thead className="bg-slate-50 text-left text-xs font-semibold text-slate-500">
               <tr>
                 <th className="px-5 py-3">日期</th>
                 <th className="px-5 py-3">学生</th>
