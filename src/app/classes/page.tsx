@@ -3,35 +3,35 @@ import { Edit3, Eye } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { EmptyText, PageTitle, TableShell } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
+import { displayValue } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
+import { requireModuleAccess, studentWhereForUser, classWhereForUser, scopeTypeOf } from "@/lib/permissions";
 import { deactivateClass } from "./actions";
 import { ClassCreateModal } from "./ClassCreateModal";
 import { DeactivateClassButton } from "./deactivate-button";
 
 export default async function ClassesPage() {
   const user = await requireUser();
-  const isHeadTeacher = user.role === "head_teacher";
+  requireModuleAccess(user, "classes");
+  const isHeadTeacher = scopeTypeOf(user) === "class";
   let classRows: any[] = [];
   let unassignedCount = 0;
   try {
     [classRows, unassignedCount] = await Promise.all([
       prisma.classRoom.findMany({
-        where: {
-          status: "active",
-          ...(isHeadTeacher ? { headTeacher: user.name } : {})
-        },
+        where: classWhereForUser(user, { status: "active" }),
         orderBy: [{ grade: "desc" }, { name: "asc" }]
       }),
-      isHeadTeacher ? Promise.resolve(0) : prisma.student.count({ where: { classId: null, status: "active" } })
+      isHeadTeacher ? Promise.resolve(0) : prisma.student.count({ where: studentWhereForUser(user, { classId: null, status: "active" }) })
     ]);
   } catch {
     try {
       classRows = await prisma.classRoom.findMany({
-        where: isHeadTeacher ? { headTeacher: user.name } : {},
+        where: classWhereForUser(user),
         orderBy: [{ grade: "desc" }, { name: "asc" }]
       });
       classRows = classRows.filter((c: any) => c.status !== "inactive");
-      unassignedCount = isHeadTeacher ? 0 : await prisma.student.count({ where: { classId: null } });
+      unassignedCount = isHeadTeacher ? 0 : await prisma.student.count({ where: studentWhereForUser(user, { classId: null }) });
     } catch {
       classRows = [];
       unassignedCount = 0;
@@ -42,7 +42,7 @@ export default async function ClassesPage() {
     classes = await Promise.all(
       classRows.map(async (item: any) => ({
         ...item,
-        studentCount: await prisma.student.count({ where: { classId: item.id, status: "active" } })
+        studentCount: await prisma.student.count({ where: studentWhereForUser(user, { classId: item.id, status: "active" }) })
       }))
     );
   } catch {
@@ -78,7 +78,7 @@ export default async function ClassesPage() {
                   <td className="px-4 py-3">{item.grade}</td>
                   <td className="px-4 py-3">{item.headTeacher}</td>
                   <td className="px-4 py-3">{item.studentCount}</td>
-                  <td className="px-4 py-3">{item.remark || "-"}</td>
+                  <td className="px-4 py-3">{displayValue(item.remark)}</td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-2">
                       <Link
@@ -109,8 +109,8 @@ export default async function ClassesPage() {
               {!isHeadTeacher ? (
                 <tr>
                   <td className="px-4 py-3 font-medium text-slate-950">暂不分班</td>
-                  <td className="px-4 py-3">-</td>
-                  <td className="px-4 py-3">-</td>
+                  <td className="px-4 py-3">—</td>
+                  <td className="px-4 py-3">—</td>
                   <td className="px-4 py-3">{unassignedCount}</td>
                   <td className="px-4 py-3">尚未绑定班级的学生</td>
                   <td className="px-4 py-3">

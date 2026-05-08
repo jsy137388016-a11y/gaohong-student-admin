@@ -4,6 +4,7 @@ import { EmptyText, FilterBar, inputClass, MoreActions, PageTitle, Panel, Search
 import { requireUser } from "@/lib/auth";
 import { displayDateTime, displayValue, firstValue } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
+import { requireModuleAccess, studentWhereForUser, classWhereForUser } from "@/lib/permissions";
 import { DeleteDisciplineRowButton } from "./DeleteDisciplineRowButton";
 import { DisciplineCreateForm } from "./DisciplineCreateForm";
 
@@ -13,6 +14,7 @@ type PageProps = {
 
 export default async function DisciplinePage({ searchParams }: PageProps) {
   const user = await requireUser();
+  requireModuleAccess(user, "discipline");
   const params = (await searchParams) || {};
   const studentId = firstValue(params.studentId) || "";
   const classId = firstValue(params.classId) || "";
@@ -21,16 +23,20 @@ export default async function DisciplinePage({ searchParams }: PageProps) {
   let classes: any[] = [];
   let students: any[] = [];
   let records: any[] = [];
+  const studentScope = studentWhereForUser(user, {
+    ...(studentId ? { id: Number(studentId) } : {}),
+    ...(classId ? { classId: Number(classId) } : {})
+  });
+
   try {
     [classes, students] = await Promise.all([
-      prisma.classRoom.findMany({ where: { status: "active" }, orderBy: [{ grade: "desc" }, { name: "asc" }] }),
-      prisma.student.findMany({ where: { status: "active" }, include: { classRoom: true }, orderBy: { name: "asc" } })
+      prisma.classRoom.findMany({ where: classWhereForUser(user, { status: "active" }), orderBy: [{ grade: "desc" }, { name: "asc" }] }),
+      prisma.student.findMany({ where: studentWhereForUser(user, { status: "active" }), include: { classRoom: true }, orderBy: { name: "asc" } })
     ]);
     records = await prisma.discipline.findMany({
       where: {
         AND: [
-          studentId ? { studentId: Number(studentId) } : {},
-          classId ? { student: { classId: Number(classId) } } : {},
+          { student: studentScope },
           date
             ? {
                 recordedAt: {
@@ -47,10 +53,10 @@ export default async function DisciplinePage({ searchParams }: PageProps) {
   } catch {
     try {
       [classes, students, records] = await Promise.all([
-        prisma.classRoom.findMany({ orderBy: [{ grade: "desc" }, { name: "asc" }] }),
-        prisma.student.findMany({ include: { classRoom: true }, orderBy: { name: "asc" } }),
+        prisma.classRoom.findMany({ where: classWhereForUser(user), orderBy: [{ grade: "desc" }, { name: "asc" }] }),
+        prisma.student.findMany({ where: studentWhereForUser(user), include: { classRoom: true }, orderBy: { name: "asc" } }),
         prisma.discipline.findMany({
-          where: studentId ? { studentId: Number(studentId) } : {},
+          where: { student: studentScope },
           include: { student: { include: { classRoom: true } } },
           orderBy: { recordedAt: "desc" }
         })
@@ -58,7 +64,6 @@ export default async function DisciplinePage({ searchParams }: PageProps) {
       classes = classes.filter((c: any) => c.status !== "inactive");
       students = students.filter((s: any) => s.status !== "withdrawn" && s.status !== "inactive" && s.status !== "deleted");
       records = records.filter((record: any) => {
-        if (classId && record.student?.classId !== Number(classId)) return false;
         if (date) {
           const recordedDate = new Date(record.recordedAt).toISOString().slice(0, 10);
           if (recordedDate !== date) return false;
@@ -76,7 +81,6 @@ export default async function DisciplinePage({ searchParams }: PageProps) {
     <DashboardLayout user={user}>
       <PageTitle title="纪律管理" description="记录违纪类型、处理结果、是否通知家长，并可查看学生历史记录。" />
 
-      {/* 查询筛选区域 */}
       <div className="mb-6 grid gap-6">
         <Panel title="查询筛选">
           <FilterBar>

@@ -4,11 +4,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { textValue } from "@/lib/forms";
+import { assertModuleAccess, assertClassAccess, assertStudentAccess } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 export async function createClass(formData: FormData) {
   try {
-    await requireUser();
+    const user = await requireUser();
+    assertModuleAccess(user, "classes");
     await prisma.classRoom.create({
       data: {
         name: textValue(formData, "name")!,
@@ -27,7 +29,9 @@ export async function createClass(formData: FormData) {
 
 export async function updateClass(id: number, formData: FormData) {
   try {
-    await requireUser();
+    const user = await requireUser();
+    assertModuleAccess(user, "classes");
+    await assertClassAccess(user, id);
     await prisma.classRoom.update({
       where: { id },
       data: {
@@ -55,7 +59,9 @@ export async function updateClass(id: number, formData: FormData) {
  */
 export async function deactivateClass(id: number) {
   try {
-    await requireUser();
+    const user = await requireUser();
+    assertModuleAccess(user, "classes");
+    await assertClassAccess(user, id);
 
     // 将班级下所有学生转入暂不分班
     await prisma.student.updateMany({
@@ -84,18 +90,12 @@ export const deleteClass = deactivateClass;
 
 async function requireStudentClassAccess(studentId: number) {
   const user = await requireUser();
-  const student = await prisma.student.findUnique({
-    where: { id: studentId },
-    include: { classRoom: true }
-  });
-
+  assertModuleAccess(user, "classes");
+  await assertStudentAccess(user, studentId);
+  const student = await prisma.student.findUnique({ where: { id: studentId } });
   if (!student) throw new Error("学生不存在");
   if (student.status === "deleted") throw new Error("学生已删除");
   if (student.status === "withdrawn") throw new Error("学生已退学");
-  if (user.role === "head_teacher" && student.classRoom?.headTeacher !== user.name) {
-    throw new Error("无权操作该学生");
-  }
-
   return { user, student };
 }
 
@@ -115,10 +115,8 @@ export async function transferClassStudent(studentId: number, currentClassId: st
     const targetClassId = rawTargetClassId === "unassigned" ? null : Number(rawTargetClassId);
     if (targetClassId !== null && !Number.isInteger(targetClassId)) throw new Error("目标班级不正确");
 
-    if (user.role === "head_teacher") {
-      if (!targetClassId) throw new Error("班主任不能转入暂不分班");
-      const targetClass = await prisma.classRoom.findUnique({ where: { id: targetClassId } });
-      if (!targetClass || targetClass.headTeacher !== user.name) throw new Error("班主任只能在自己负责的班级内操作");
+    if (targetClassId) {
+      await assertClassAccess(user, targetClassId);
     }
 
     // 换班只更新 classId

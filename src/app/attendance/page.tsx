@@ -4,6 +4,7 @@ import { ConfirmButton, EmptyText, FilterBar, inputClass, PageTitle, Panel, Sear
 import { requireUser } from "@/lib/auth";
 import { attendanceLabels, displayDate, displayValue, firstValue } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
+import { requireModuleAccess, studentWhereForUser, classWhereForUser, scopeTypeOf } from "@/lib/permissions";
 import { deleteAttendance } from "./actions";
 import { AttendanceBatchModal } from "./AttendanceBatchModal";
 import { AttendanceCreateModal } from "./AttendanceCreateModal";
@@ -14,6 +15,7 @@ type PageProps = {
 
 export default async function AttendancePage({ searchParams }: PageProps) {
   const user = await requireUser();
+  requireModuleAccess(user, "attendance");
   const params = (await searchParams) || {};
   const date = firstValue(params.date) || "";
   const classId = firstValue(params.classId) || "";
@@ -24,12 +26,13 @@ export default async function AttendancePage({ searchParams }: PageProps) {
   let attendance: any[] = [];
   try {
     [classes, students] = await Promise.all([
-      prisma.classRoom.findMany({ orderBy: [{ grade: "desc" }, { name: "asc" }] }),
-      prisma.student.findMany({ where: { status: "active" }, include: { classRoom: true }, orderBy: { name: "asc" } })
+      prisma.classRoom.findMany({ where: classWhereForUser(user), orderBy: [{ grade: "desc" }, { name: "asc" }] }),
+      prisma.student.findMany({ where: studentWhereForUser(user, { status: "active" }), include: { classRoom: true }, orderBy: { name: "asc" } })
     ]);
     attendance = await prisma.attendance.findMany({
       where: {
         AND: [
+          { student: studentWhereForUser(user) },
           date
             ? {
                 date: {
@@ -48,10 +51,10 @@ export default async function AttendancePage({ searchParams }: PageProps) {
   } catch {
     try {
       [classes, students, attendance] = await Promise.all([
-        prisma.classRoom.findMany({ orderBy: [{ grade: "desc" }, { name: "asc" }] }),
-        prisma.student.findMany({ include: { classRoom: true }, orderBy: { name: "asc" } }),
+        prisma.classRoom.findMany({ where: classWhereForUser(user), orderBy: [{ grade: "desc" }, { name: "asc" }] }),
+        prisma.student.findMany({ where: studentWhereForUser(user), include: { classRoom: true }, orderBy: { name: "asc" } }),
         prisma.attendance.findMany({
-          where: studentId ? { studentId: Number(studentId) } : {},
+          where: studentId ? { student: studentWhereForUser(user, { id: Number(studentId) }) } : { student: studentWhereForUser(user) },
           include: { student: { include: { classRoom: true } } },
           orderBy: { date: "desc" }
         })

@@ -7,6 +7,17 @@ export const roleLabels: Record<string, string> = {
   subject_teacher: "任课老师"
 };
 
+export const scopeTypeLabels: Record<string, string> = {
+  school: "全校",
+  department: "部门",
+  class: "班级"
+};
+
+export const accountStatusLabels: Record<string, string> = {
+  active: "启用",
+  disabled: "停用"
+};
+
 export const genderLabels: Record<string, string> = {
   male: "男",
   female: "女"
@@ -75,23 +86,19 @@ export function firstValue(value: string | string[] | undefined) {
 }
 
 export function scoreTotal(_score: Record<string, unknown>) {
-  // 旧6列模式已废弃，保留空函数避免编译报错
   console.warn("scoreTotal() is deprecated, use scoreTotalFromSubjects() instead");
   return 0;
 }
 
-/** 从 subject 模式的成绩数组计算总分 */
 export function scoreTotalFromSubjects(scores: Array<{ subject: string; score: number }>) {
   return scores.reduce((sum, s) => sum + (s.score || 0), 0);
 }
 
-/** 学科满分配置 */
 export const SUBJECT_FULL_SCORES: Record<string, number> = {
   "语文": 150, "数学": 150, "英语": 150, "日语": 150, "俄语": 150,
   "物理": 100, "历史": 100, "地理": 100, "政治": 100, "生物": 100, "化学": 100,
 };
 
-/** 所有学科名称（按3+1+2顺序） */
 export const ALL_SUBJECTS = [
   "语文", "数学", "英语", "日语", "俄语",
   "物理", "历史", "地理", "政治", "生物", "化学",

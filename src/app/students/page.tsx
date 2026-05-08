@@ -17,6 +17,7 @@ import { StudentImportPanel } from "@/components/student-import";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { boardingLabels, displayValue, firstValue, genderLabels } from "@/lib/format";
+import { requireModuleAccess, studentWhereForUser, classWhereForUser, scopeTypeOf } from "@/lib/permissions";
 import { deleteStudent } from "./actions";
 import { StudentCreateModal } from "./StudentCreateModal";
 import { Pagination } from "./Pagination";
@@ -32,11 +33,12 @@ export default async function StudentsPage({ searchParams }: PageProps) {
   // requireUser() 内部 redirect() 抛出的 NEXT_REDIRECT 由 Next.js 路由层捕获，
   // 不要在这里 try-catch，否则 redirect 会变成 Application Error
   const user = await requireUser();
+  requireModuleAccess(user, "students");
 
   const params = (await searchParams) || {};
   const q = firstValue(params.q) || "";
   const classId = firstValue(params.classId) || "";
-  const isHeadTeacher = user.role === "head_teacher";
+  const isHeadTeacher = scopeTypeOf(user) === "class";
   const isUnassignedFilter = classId === "unassigned";
 
   // 分页参数
@@ -54,7 +56,7 @@ export default async function StudentsPage({ searchParams }: PageProps) {
     classes = await prisma.classRoom.findMany({
       where: {
         status: "active",
-        ...(isHeadTeacher ? { headTeacher: user.name } : {})
+        ...classWhereForUser(user)
       },
       orderBy: [{ grade: "desc" }, { name: "asc" }]
     });
@@ -64,7 +66,7 @@ export default async function StudentsPage({ searchParams }: PageProps) {
   }
 
   try {
-    const where: any = {
+    let where: any = {
       AND: [
         { status: "active" },
         q
@@ -80,9 +82,7 @@ export default async function StudentsPage({ searchParams }: PageProps) {
         isUnassignedFilter ? { classId: null } : classId ? { classId: Number(classId) } : {}
       ]
     };
-    if (isHeadTeacher) {
-      where.AND.push({ classRoom: { headTeacher: user.name } });
-    }
+    where = studentWhereForUser(user, where);
     // 分页查询：先查总数，再查当前页数据
     const [count, studentsList] = await Promise.all([
       prisma.student.count({ where }),

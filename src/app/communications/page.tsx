@@ -3,6 +3,7 @@ import { ConfirmButton, EmptyText, FilterBar, inputClass, MoreActions, PageTitle
 import { requireUser } from "@/lib/auth";
 import { displayDateTime, displayValue, firstValue, methodLabels } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
+import { requireModuleAccess, studentWhereForUser } from "@/lib/permissions";
 import { deleteCommunication } from "./actions";
 import { CommunicationCreateModal } from "./CommunicationCreateModal";
 
@@ -12,24 +13,25 @@ type PageProps = {
 
 export default async function CommunicationsPage({ searchParams }: PageProps) {
   const user = await requireUser();
+  requireModuleAccess(user, "communications");
   const params = (await searchParams) || {};
   const studentId = firstValue(params.studentId) || "";
 
   let students: any[] = [];
   let records: any[] = [];
   try {
-    students = await prisma.student.findMany({ where: { status: "active" }, include: { classRoom: true }, orderBy: { name: "asc" } });
+    students = await prisma.student.findMany({ where: studentWhereForUser(user, { status: "active" }), include: { classRoom: true }, orderBy: { name: "asc" } });
     records = await prisma.communication.findMany({
-      where: studentId ? { studentId: Number(studentId) } : {},
+      where: studentId ? { student: studentWhereForUser(user, { id: Number(studentId) }) } : { student: studentWhereForUser(user) },
       include: { student: { include: { classRoom: true } } },
       orderBy: { contactedAt: "desc" }
     });
   } catch {
     try {
       [students, records] = await Promise.all([
-        prisma.student.findMany({ include: { classRoom: true }, orderBy: { name: "asc" } }),
+        prisma.student.findMany({ where: studentWhereForUser(user), include: { classRoom: true }, orderBy: { name: "asc" } }),
         prisma.communication.findMany({
-          where: studentId ? { studentId: Number(studentId) } : {},
+          where: studentId ? { student: studentWhereForUser(user, { id: Number(studentId) }) } : { student: studentWhereForUser(user) },
           include: { student: { include: { classRoom: true } } },
           orderBy: { contactedAt: "desc" }
         })

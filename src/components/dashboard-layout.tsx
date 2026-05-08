@@ -1,21 +1,21 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import {
-  GraduationCap,
-  LogOut,
-} from "lucide-react";
+import { GraduationCap, LogOut } from "lucide-react";
 import { ActionToast } from "@/components/action-toast";
 import { MainNav } from "@/components/main-nav";
 import { logout } from "@/lib/auth";
 import { roleLabels } from "@/lib/format";
+import { allowedModulesFor, type AuthUser } from "@/lib/permissions";
 
 export function DashboardLayout({
   children,
   user
 }: {
   children: React.ReactNode;
-  user: { name: string; username: string; role: string };
+  user: AuthUser;
 }) {
+  const modules = allowedModulesFor(user);
+
   async function logoutAction() {
     "use server";
     await logout();
@@ -34,7 +34,7 @@ export function DashboardLayout({
             <div className="text-xs text-slate-500">学校运营管理平台</div>
           </div>
         </div>
-        <MainNav />
+        <MainNav modules={modules} />
       </aside>
 
       <div className="lg:pl-64">
@@ -47,7 +47,7 @@ export function DashboardLayout({
           <div className="flex items-center gap-4">
             <div className="text-right">
               <div className="text-sm font-medium text-slate-900">{user.name}</div>
-              <div className="text-xs text-slate-500">{roleLabels[user.role] || user.role}</div>
+              <div className="text-xs text-slate-500">{roleLabels[user.roleCode || user.role] || user.role}</div>
             </div>
             <form action={logoutAction}>
               <button
@@ -64,7 +64,7 @@ export function DashboardLayout({
         </Suspense>
 
         <div className="border-b border-slate-200 bg-white px-4 py-2 lg:hidden">
-          <MainNav mobile />
+          <MainNav mobile modules={modules} />
         </div>
 
         <main className="mx-auto max-w-[1440px] px-4 py-8 lg:px-8">{children}</main>

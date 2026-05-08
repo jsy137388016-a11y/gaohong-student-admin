@@ -8,6 +8,7 @@ import { EmptyText, PageTitle, Panel, TableShell } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import { boardingLabels, genderLabels } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
+import { assertClassAccess, classWhereForUser, requireModuleAccess, scopeTypeOf, studentWhereForUser } from "@/lib/permissions";
 import { deleteClassStudent, transferClassStudent, withdrawClassStudent } from "../actions";
 import { ClassScoreImportButtons } from "./score-import-client";
 
@@ -36,8 +37,9 @@ function ClassNotFound({ user }: { user: { name: string; username: string; role:
 
 export default async function ClassDetailPage({ params }: PageProps) {
   const user = await requireUser();
+  requireModuleAccess(user, "classes");
   const { id } = await params;
-  const isHeadTeacher = user.role === "head_teacher";
+  const isHeadTeacher = scopeTypeOf(user) === "class";
   const isUnassigned = id === "unassigned";
 
   // 班主任不能访问"暂不分班"
@@ -47,6 +49,10 @@ export default async function ClassDetailPage({ params }: PageProps) {
   const classId = Number(id);
   if (!isUnassigned && !Number.isInteger(classId)) {
     return <ClassNotFound user={user} />;
+  }
+
+  if (!isUnassigned) {
+    try { await assertClassAccess(user, classId); } catch { return <ClassNotFound user={user} />; }
   }
 
   // 查询班级信息，同时过滤已停用的班级
@@ -72,24 +78,19 @@ export default async function ClassDetailPage({ params }: PageProps) {
     return <ClassNotFound user={user} />;
   }
 
-  // 班主任权限检查：只能查看自己负责的班级
-  if (isHeadTeacher && classRoom?.headTeacher !== user.name) {
-    return <ClassNotFound user={user} />;
-  }
-
   // 查询学生和班级列表
   let students: any[] = [];
   let classes: any[] = [];
   try {
     [students, classes] = await Promise.all([
       prisma.student.findMany({
-        where: isUnassigned ? { classId: null, status: "active" } : { classId: classRoom!.id, status: "active" },
+        where: studentWhereForUser(user, isUnassigned ? { classId: null, status: "active" } : { classId: classRoom!.id, status: "active" }),
         orderBy: { name: "asc" }
       }),
       prisma.classRoom.findMany({
         where: {
           status: "active",
-          ...(isHeadTeacher ? { headTeacher: user.name } : {})
+          ...classWhereForUser(user)
         },
         orderBy: [{ grade: "desc" }, { name: "asc" }]
       })
@@ -99,11 +100,11 @@ export default async function ClassDetailPage({ params }: PageProps) {
     try {
       [students, classes] = await Promise.all([
         prisma.student.findMany({
-          where: isUnassigned ? { classId: null } : { classId: classRoom!.id },
+          where: studentWhereForUser(user, isUnassigned ? { classId: null } : { classId: classRoom!.id }),
           orderBy: { name: "asc" }
         }),
         prisma.classRoom.findMany({
-          where: isHeadTeacher ? { headTeacher: user.name } : {},
+          where: classWhereForUser(user),
           orderBy: [{ grade: "desc" }, { name: "asc" }]
         })
       ]);

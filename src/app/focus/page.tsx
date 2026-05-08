@@ -5,6 +5,7 @@ import { EmptyText, PageTitle, Panel, TableShell } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import { boardingLabels, displayDateTime, genderLabels } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
+import { requireModuleAccess, studentWhereForUser, classWhereForUser, scopeTypeOf } from "@/lib/permissions";
 
 const levelLabels: Record<string, string> = {
   low: "低",
@@ -28,7 +29,8 @@ const warningStatusLabels: Record<string, string> = {
 
 export default async function FocusPage() {
   const user = await requireUser();
-  const isHeadTeacher = user.role === "head_teacher";
+  requireModuleAccess(user, "focus");
+  const isHeadTeacher = scopeTypeOf(user) === "class";
 
   // 查询预警记录（优先展示 WarningRecord）
   let warnings: any[] = [];
@@ -36,7 +38,7 @@ export default async function FocusPage() {
     warnings = await prisma.warningRecord.findMany({
       where: {
         status: { not: "resolved" },
-        ...(isHeadTeacher ? { student: { classRoom: { headTeacher: user.name } } } : {})
+        student: studentWhereForUser(user)
       },
       include: { student: { include: { classRoom: true } } },
       orderBy: [{ createdAt: "desc" }]
@@ -44,13 +46,10 @@ export default async function FocusPage() {
   } catch {
     try {
       warnings = await prisma.warningRecord.findMany({
-        where: { status: { not: "resolved" } },
+        where: { status: { not: "resolved" }, student: studentWhereForUser(user) },
         include: { student: { include: { classRoom: true } } },
         orderBy: [{ createdAt: "desc" }]
       });
-      if (isHeadTeacher) {
-        warnings = warnings.filter((w: any) => w.student?.classRoom?.headTeacher === user.name);
-      }
     } catch {
       warnings = [];
     }
@@ -61,15 +60,12 @@ export default async function FocusPage() {
   const warningStudentIds = new Set(warnings.map((w: any) => w.studentId));
   try {
     focusStudents = await prisma.student.findMany({
-      where: { isFocus: true, status: "active" },
+      where: studentWhereForUser(user, { isFocus: true, status: "active" }),
       include: { classRoom: true },
       orderBy: [{ focusMarkedAt: "desc" }]
     });
     // 只保留没有 WarningRecord 的（避免重复显示）
     focusStudents = focusStudents.filter((s: any) => !warningStudentIds.has(s.id));
-    if (isHeadTeacher) {
-      focusStudents = focusStudents.filter((s: any) => s.classRoom?.headTeacher === user.name);
-    }
   } catch {
     focusStudents = [];
   }

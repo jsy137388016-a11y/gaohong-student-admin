@@ -2,13 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { assertModuleAccess, assertStudentAccess } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { optionalNumber, textValue } from "@/lib/forms";
 import { requireUser } from "@/lib/auth";
 
 export async function createStudent(formData: FormData): Promise<{ success: boolean; error?: string }> {
   try {
-    await requireUser();
+    const user = await requireUser();
+    assertModuleAccess(user, "students");
     await prisma.student.create({
       data: {
         name: textValue(formData, "name")!,
@@ -32,7 +34,9 @@ export async function createStudent(formData: FormData): Promise<{ success: bool
 
 export async function updateStudent(id: number, formData: FormData) {
   try {
-    await requireUser();
+    const user = await requireUser();
+    assertModuleAccess(user, "students");
+    await assertStudentAccess(user, id);
     await prisma.student.update({
       where: { id },
       data: {
@@ -63,7 +67,9 @@ export async function updateStudent(id: number, formData: FormData) {
  */
 export async function deleteStudent(id: number) {
   try {
-    await requireUser();
+    const user = await requireUser();
+    assertModuleAccess(user, "students");
+    await assertStudentAccess(user, id);
     await prisma.student.update({
       where: { id },
       data: {
@@ -83,17 +89,8 @@ export async function deleteStudent(id: number) {
 
 async function requireStudentAccess(studentId: number) {
   const user = await requireUser();
-  if (user.role !== "head_teacher") return user;
-
-  const student = await prisma.student.findUnique({
-    where: { id: studentId },
-    include: { classRoom: true }
-  });
-
-  if (!student || student.classRoom?.headTeacher !== user.name) {
-    throw new Error("无权操作该学生");
-  }
-
+  assertModuleAccess(user, "students");
+  await assertStudentAccess(user, studentId);
   return user;
 }
 

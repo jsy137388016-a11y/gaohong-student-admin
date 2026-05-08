@@ -17,12 +17,12 @@ async function main() {
 
   await prisma.user.createMany({
     data: [
-      { username: "admin", passwordHash, name: "系统管理员", role: "admin" },
-      { username: "principal", passwordHash, name: "高校长", role: "principal" },
-      { username: "minister", passwordHash, name: "教务部长", role: "minister" },
-      { username: "moral", passwordHash, name: "德育主任", role: "moral_director" },
-      { username: "teacher1", passwordHash, name: "李老师", role: "head_teacher" },
-      { username: "teacher2", passwordHash, name: "王老师", role: "subject_teacher" }
+      { username: "admin", passwordHash, name: "系统管理员", role: "admin", roleCode: "admin", scopeType: "school", status: "active" },
+      { username: "principal", passwordHash, name: "高校长", role: "principal", roleCode: "principal", scopeType: "school", status: "active" },
+      { username: "minister", passwordHash, name: "教务部长", role: "minister", roleCode: "minister", scopeType: "department", scopeValue: "高三", status: "active" },
+      { username: "moral", passwordHash, name: "德育主任", role: "moral_director", roleCode: "moral_director", scopeType: "school", status: "active" },
+      { username: "teacher1", passwordHash, name: "李老师", role: "head_teacher", roleCode: "head_teacher", scopeType: "class", scopeValue: "李老师", status: "active" },
+      { username: "teacher2", passwordHash, name: "王老师", role: "subject_teacher", roleCode: "subject_teacher", scopeType: "class", scopeValue: "王老师", status: "active" }
     ]
   });
 

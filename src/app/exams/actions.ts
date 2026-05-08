@@ -4,11 +4,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { dateValue, textValue } from "@/lib/forms";
+import { assertModuleAccess } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 export async function createExam(formData: FormData) {
   try {
-    await requireUser();
+    const user = await requireUser();
+    assertModuleAccess(user, "exams");
     await prisma.exam.create({
       data: {
         name: textValue(formData, "name")!,
@@ -30,7 +32,8 @@ export async function createExam(formData: FormData) {
 
 export async function deleteExam(id: number) {
   try {
-    await requireUser();
+    const user = await requireUser();
+    assertModuleAccess(user, "exams");
     await prisma.exam.delete({ where: { id } });
     revalidatePath("/exams");
     revalidatePath("/dashboard");
@@ -44,7 +47,8 @@ export async function deleteExam(id: number) {
 
 export async function deleteScore(scoreId: number, examId: number) {
   try {
-    await requireUser();
+    const user = await requireUser();
+    assertModuleAccess(user, "exams");
     await prisma.score.delete({ where: { id: scoreId } });
     revalidatePath(`/exams/${examId}`);
     redirect(`/exams/${examId}?notice=成绩已删除`);

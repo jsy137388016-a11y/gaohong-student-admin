@@ -5,6 +5,7 @@ import { DeleteButton, Field, inputClass, PageTitle, Panel, TableShell } from "@
 import { requireUser } from "@/lib/auth";
 import { displayDate, firstValue, scoreTotalFromSubjects, ALL_SUBJECTS, SUBJECT_FULL_SCORES } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
+import { classWhereForUser, requireModuleAccess, studentWhereForUser } from "@/lib/permissions";
 import { deleteScore } from "../actions";
 import { ScoreImportPanel } from "@/components/score-import";
 
@@ -34,6 +35,7 @@ function ExamNotFound({ user }: { user: { name: string; username: string; role: 
 
 export default async function ExamDetailPage({ params, searchParams }: PageProps) {
   const user = await requireUser();
+  requireModuleAccess(user, "exams");
   const { id } = await params;
   const query = (await searchParams) || {};
   const classId = firstValue(query.classId) || "";
@@ -55,18 +57,18 @@ export default async function ExamDetailPage({ params, searchParams }: PageProps
   let scores: any[] = [];
   try {
     [classes, scores] = await Promise.all([
-      prisma.classRoom.findMany({ orderBy: [{ grade: "desc" }, { name: "asc" }] }),
+      prisma.classRoom.findMany({ where: classWhereForUser(user), orderBy: [{ grade: "desc" }, { name: "asc" }] }),
       prisma.score.findMany({
-        where: { examId, ...(classId ? { classId: Number(classId) } : {}) },
+        where: { examId, student: studentWhereForUser(user, classId ? { classId: Number(classId) } : {}) },
         include: { student: { include: { classRoom: true } } }
       })
     ]);
   } catch {
     try {
       [classes, scores] = await Promise.all([
-        prisma.classRoom.findMany({ orderBy: [{ grade: "desc" }, { name: "asc" }] }),
+        prisma.classRoom.findMany({ where: classWhereForUser(user), orderBy: [{ grade: "desc" }, { name: "asc" }] }),
         prisma.score.findMany({
-          where: { examId },
+          where: { examId, student: studentWhereForUser(user) },
           include: { student: { include: { classRoom: true } } }
         })
       ]);

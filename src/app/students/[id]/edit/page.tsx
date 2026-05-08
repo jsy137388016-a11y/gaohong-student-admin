@@ -3,6 +3,7 @@ import { AlertTriangle, ArrowLeft } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Field, inputClass, PageTitle, Panel, PrimaryButton, textareaClass } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
+import { assertStudentAccess, classWhereForUser, requireModuleAccess } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { updateStudent } from "../../actions";
 
@@ -31,6 +32,7 @@ function StudentNotFound({ user }: { user: { name: string; username: string; rol
 
 export default async function EditStudentPage({ params }: PageProps) {
   const user = await requireUser();
+  requireModuleAccess(user, "students");
   const { id } = await params;
 
   // 验证 id 是否为有效整数

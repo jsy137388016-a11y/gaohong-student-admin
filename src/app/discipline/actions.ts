@@ -3,13 +3,16 @@
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { dateValue, numberValue, optionalNumber, textValue } from "@/lib/forms";
+import { assertModuleAccess, assertStudentAccess } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 export async function createDiscipline(formData: FormData): Promise<{ success: boolean; error?: string }> {
   try {
-    await requireUser();
+    const user = await requireUser();
+    assertModuleAccess(user, "discipline");
     const studentId = optionalNumber(formData, "studentId");
     if (!studentId) throw new Error("请选择学生");
+    await assertStudentAccess(user, studentId);
     const violationType = textValue(formData, "violationType");
     if (!violationType) throw new Error("请填写违纪类型");
     const deductScore = numberValue(formData, "deductScore", 0);
@@ -35,16 +38,13 @@ export async function createDiscipline(formData: FormData): Promise<{ success: b
 }
 
 export async function deleteDiscipline(id: number) {
-  try {
-    await requireUser();
-    const record = await prisma.discipline.findUnique({ where: { id } });
-    if (!record) throw new Error("记录不存在");
-    await prisma.discipline.delete({ where: { id } });
-    revalidatePath("/discipline");
-    revalidatePath("/dashboard");
-    revalidatePath(`/students/${record.studentId}`);
-  } catch (error) {
-    console.error("deleteDiscipline error:", error);
-    throw new Error("删除违纪记录失败：" + (error instanceof Error ? error.message : "未知错误"));
-  }
+  const user = await requireUser();
+  assertModuleAccess(user, "discipline");
+  const record = await prisma.discipline.findUnique({ where: { id } });
+  if (!record) throw new Error("记录不存在");
+  await assertStudentAccess(user, record.studentId);
+  await prisma.discipline.delete({ where: { id } });
+  revalidatePath("/discipline");
+  revalidatePath("/dashboard");
+  revalidatePath(`/students/${record.studentId}`);
 }

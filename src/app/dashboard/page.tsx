@@ -5,6 +5,7 @@ import { EmptyText, Panel } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import { displayDateTime } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
+import { requireModuleAccess, studentWhereForUser, classWhereForUser, scopeTypeOf } from "@/lib/permissions";
 import { FollowUpItem } from "./FollowUpItem";
 
 function StatCard({
@@ -67,6 +68,7 @@ export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   const user = await requireUser();
+  requireModuleAccess(user, "dashboard");
   const today = new Date();
   const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
@@ -82,13 +84,13 @@ export default async function DashboardPage() {
 
   try {
     [studentCount, classCount, todayLeaveCount, weekDisciplineCount, latestExam, followUps] = await Promise.all([
-      prisma.student.count({ where: { status: "active" } }),
-      prisma.classRoom.count(),
-      prisma.attendance.count({ where: { type: "leave", date: { gte: startOfToday, lt: endOfToday } } }),
-      prisma.discipline.count({ where: { recordedAt: { gte: startOfWeek } } }),
-      prisma.exam.findFirst({ include: { scores: true }, orderBy: { examDate: "desc" } }),
+      prisma.student.count({ where: studentWhereForUser(user, { status: "active" }) }),
+      prisma.classRoom.count({ where: classWhereForUser(user) }),
+      prisma.attendance.count({ where: { type: "leave", date: { gte: startOfToday, lt: endOfToday }, student: studentWhereForUser(user) } }),
+      prisma.discipline.count({ where: { recordedAt: { gte: startOfWeek }, student: studentWhereForUser(user) } }),
+      prisma.exam.findFirst({ include: { scores: { where: { student: studentWhereForUser(user) } } }, orderBy: { examDate: "desc" } }),
       prisma.communication.findMany({
-        where: { followUp: { not: null } },
+        where: { followUp: { not: null }, student: studentWhereForUser(user) },
         include: { student: true },
         orderBy: { contactedAt: "desc" },
         take: 5

@@ -8,6 +8,7 @@ import { StudentTabs } from "./StudentTabs";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { EmptyText, PageTitle, Panel, TableShell } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
+import { assertStudentAccess, classWhereForUser, requireModuleAccess } from "@/lib/permissions";
 import {
   ALL_SUBJECTS,
   attendanceLabels,
@@ -37,6 +38,7 @@ function InfoItem({ label, value }: { label: string; value: string | number | nu
 
 export default async function StudentDetailPage({ params }: PageProps) {
   const user = await requireUser();
+  requireModuleAccess(user, "students");
   const { id } = await params;
   const studentId = Number(id);
 
@@ -48,6 +50,14 @@ export default async function StudentDetailPage({ params }: PageProps) {
     });
   } catch {
     student = null;
+  }
+
+  if (student) {
+    try {
+      await assertStudentAccess(user, student.id);
+    } catch {
+      student = null;
+    }
   }
 
   // 学生不存在

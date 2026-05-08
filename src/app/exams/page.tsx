@@ -3,17 +3,19 @@ import { ArrowRight } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { DeleteButton, PageTitle, TableShell } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
-import { displayDate, scoreTotalFromSubjects } from "@/lib/format";
+import { displayDate } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
+import { requireModuleAccess, studentWhereForUser } from "@/lib/permissions";
 import { deleteExam } from "./actions";
 import { ExamCreateModal } from "./ExamCreateModal";
 
 export default async function ExamsPage() {
   const user = await requireUser();
+  requireModuleAccess(user, "exams");
   let exams: any[] = [];
   try {
     exams = await prisma.exam.findMany({
-      include: { scores: true },
+      include: { scores: { where: { student: studentWhereForUser(user) } } },
       orderBy: { examDate: "desc" }
     });
   } catch {
@@ -46,7 +48,6 @@ export default async function ExamsPage() {
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
               {exams.map((exam) => {
-                // subject模式下，scores是扁平的成绩条目（每个学生每科一行）
                 const scoreCount = exam.scores?.length || 0;
                 const studentIds = new Set((exam.scores || []).map((s: any) => s.studentId));
                 const studentCount = studentIds.size;
