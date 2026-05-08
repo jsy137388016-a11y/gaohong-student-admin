@@ -10,13 +10,13 @@ import { FollowUpItem } from "./FollowUpItem";
 function StatCard({
   title,
   value,
-  icon: Icon,
+  icon,
   href,
   tone
 }: {
   title: string;
   value: string | number;
-  icon: React.ElementType;
+  icon: React.ReactNode;
   href: string;
   tone: "blue" | "emerald" | "amber" | "red" | "violet";
 }) {
@@ -37,7 +37,7 @@ function StatCard({
           <div className="mt-2 text-xs text-slate-400">点击查看明细数据</div>
         </div>
         <div className={`flex h-12 w-12 items-center justify-center rounded-xl border transition-colors ${tones[tone]}`}>
-          <Icon size={22} />
+          {icon}
         </div>
       </div>
       <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-3 text-xs font-medium text-slate-400 group-hover:text-brand-700">
@@ -48,11 +48,11 @@ function StatCard({
   );
 }
 
-function QuickEntry({ href, title, description, icon: Icon }: { href: string; title: string; description: string; icon: React.ElementType }) {
+function QuickEntry({ href, title, description, icon }: { href: string; title: string; description: string; icon: React.ReactNode }) {
   return (
     <Link href={href} className="group flex items-center gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition-all hover:border-brand-200 hover:bg-brand-50/40">
       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600 group-hover:bg-brand-100 group-hover:text-brand-700">
-        <Icon size={20} />
+        {icon}
       </div>
       <div className="min-w-0 flex-1">
         <div className="font-medium text-slate-950">{title}</div>
@@ -128,11 +128,11 @@ export default async function DashboardPage() {
         </div>
       </div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        <StatCard title="学生总数" value={studentCount} icon={Users} href="/students" tone="blue" />
-        <StatCard title="班级总数" value={classCount} icon={School} href="/classes" tone="emerald" />
-        <StatCard title="今日请假人数" value={todayLeaveCount} icon={CalendarDays} href="/attendance" tone="amber" />
-        <StatCard title="本周违纪次数" value={weekDisciplineCount} icon={AlertCircle} href="/discipline" tone="red" />
-        <StatCard title="最近考试平均分" value={latestAverage} icon={BookOpen} href="/exams" tone="violet" />
+        <StatCard title="学生总数" value={studentCount} icon={<Users className="h-5 w-5" />} href="/students" tone="blue" />
+        <StatCard title="班级总数" value={classCount} icon={<School className="h-5 w-5" />} href="/classes" tone="emerald" />
+        <StatCard title="今日请假人数" value={todayLeaveCount} icon={<CalendarDays className="h-5 w-5" />} href="/attendance" tone="amber" />
+        <StatCard title="本周违纪次数" value={weekDisciplineCount} icon={<AlertCircle className="h-5 w-5" />} href="/discipline" tone="red" />
+        <StatCard title="最近考试平均分" value={latestAverage} icon={<BookOpen className="h-5 w-5" />} href="/exams" tone="violet" />
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_420px]">
@@ -158,10 +158,10 @@ export default async function DashboardPage() {
 
         <Panel title="常用入口">
           <div className="grid gap-3">
-            <QuickEntry href="/students" title="学生档案管理" description="查看学生资料、班级归属和重点关注状态" icon={Users} />
-            <QuickEntry href="/attendance" title="今日考勤记录" description="录入请假、迟到、旷课、早退等考勤状态" icon={CalendarDays} />
-            <QuickEntry href="/discipline" title="纪律与扣分" description="查看违纪处理记录和德育扣分情况" icon={AlertCircle} />
-            <QuickEntry href="/communications" title="家校沟通跟进" description="沉淀沟通记录和后续跟进事项" icon={MessageSquareWarning} />
+            <QuickEntry href="/students" title="学生档案管理" description="查看学生资料、班级归属和重点关注状态" icon={<Users className="h-5 w-5" />} />
+            <QuickEntry href="/attendance" title="今日考勤记录" description="录入请假、迟到、旷课、早退等考勤状态" icon={<CalendarDays className="h-5 w-5" />} />
+            <QuickEntry href="/discipline" title="纪律与扣分" description="查看违纪处理记录和德育扣分情况" icon={<AlertCircle className="h-5 w-5" />} />
+            <QuickEntry href="/communications" title="家校沟通跟进" description="沉淀沟通记录和后续跟进事项" icon={<MessageSquareWarning className="h-5 w-5" />} />
           </div>
         </Panel>
       </div>

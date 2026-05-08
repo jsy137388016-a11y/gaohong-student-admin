@@ -2,26 +2,42 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { LucideIcon } from "lucide-react";
+import {
+  BookOpen,
+  CalendarCheck,
+  Home,
+  MessageSquareText,
+  School,
+  Settings,
+  ShieldAlert,
+  Star,
+  Users
+} from "lucide-react";
 
-export type NavItem = {
-  href: string;
-  label: string;
-  icon: LucideIcon;
-};
+const navItems = [
+  { href: "/dashboard", label: "首页", icon: <Home className="h-[18px] w-[18px]" /> },
+  { href: "/students", label: "学生管理", icon: <Users className="h-[18px] w-[18px]" /> },
+  { href: "/classes", label: "班级管理", icon: <School className="h-[18px] w-[18px]" /> },
+  { href: "/attendance", label: "考勤管理", icon: <CalendarCheck className="h-[18px] w-[18px]" /> },
+  { href: "/discipline", label: "纪律管理", icon: <ShieldAlert className="h-[18px] w-[18px]" /> },
+  { href: "/exams", label: "成绩管理", icon: <BookOpen className="h-[18px] w-[18px]" /> },
+  { href: "/focus", label: "重点关注", icon: <Star className="h-[18px] w-[18px]" /> },
+  { href: "/communications", label: "家校沟通", icon: <MessageSquareText className="h-[18px] w-[18px]" /> },
+  { href: "/settings", label: "系统设置", icon: <Settings className="h-[18px] w-[18px]" /> }
+];
 
 function isActive(pathname: string, href: string) {
   if (href === "/dashboard") return pathname === "/dashboard" || pathname === "/";
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function MainNav({ items, mobile = false }: { items: NavItem[]; mobile?: boolean }) {
+export function MainNav({ mobile = false }: { mobile?: boolean }) {
   const pathname = usePathname();
 
   if (mobile) {
     return (
       <div className="flex gap-2 overflow-x-auto">
-        {items.map((item) => {
+        {navItems.map((item) => {
           const active = isActive(pathname, item.href);
           return (
             <Link
@@ -43,8 +59,7 @@ export function MainNav({ items, mobile = false }: { items: NavItem[]; mobile?: 
 
   return (
     <nav className="space-y-1 px-3 py-4">
-      {items.map((item) => {
-        const Icon = item.icon;
+      {navItems.map((item) => {
         const active = isActive(pathname, item.href);
         return (
           <Link
@@ -56,7 +71,7 @@ export function MainNav({ items, mobile = false }: { items: NavItem[]; mobile?: 
                 : "text-slate-700 hover:bg-slate-50 hover:text-slate-950"
             }`}
           >
-            <Icon size={18} />
+            {item.icon}
             {item.label}
           </Link>
         );

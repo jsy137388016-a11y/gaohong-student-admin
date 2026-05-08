@@ -1,33 +1,12 @@
 import { redirect } from "next/navigation";
 import {
-  BookOpen,
-  CalendarCheck,
   GraduationCap,
-  Home,
   LogOut,
-  MessageSquareText,
-  School,
-  Settings,
-  ShieldAlert,
-  Star,
-  Users
 } from "lucide-react";
 import { ActionToast } from "@/components/action-toast";
-import { MainNav, type NavItem } from "@/components/main-nav";
+import { MainNav } from "@/components/main-nav";
 import { logout } from "@/lib/auth";
 import { roleLabels } from "@/lib/format";
-
-const navItems: NavItem[] = [
-  { href: "/dashboard", label: "首页", icon: Home },
-  { href: "/students", label: "学生管理", icon: Users },
-  { href: "/classes", label: "班级管理", icon: School },
-  { href: "/attendance", label: "考勤管理", icon: CalendarCheck },
-  { href: "/discipline", label: "纪律管理", icon: ShieldAlert },
-  { href: "/exams", label: "成绩管理", icon: BookOpen },
-  { href: "/focus", label: "重点关注", icon: Star },
-  { href: "/communications", label: "家校沟通", icon: MessageSquareText },
-  { href: "/settings", label: "系统设置", icon: Settings }
-];
 
 export function DashboardLayout({
   children,
@@ -54,7 +33,7 @@ export function DashboardLayout({
             <div className="text-xs text-slate-500">学校运营管理平台</div>
           </div>
         </div>
-        <MainNav items={navItems} />
+        <MainNav />
       </aside>
 
       <div className="lg:pl-64">
@@ -82,7 +61,7 @@ export function DashboardLayout({
         <ActionToast />
 
         <div className="border-b border-slate-200 bg-white px-4 py-2 lg:hidden">
-          <MainNav items={navItems} mobile />
+          <MainNav mobile />
         </div>
 
         <main className="mx-auto max-w-[1440px] px-4 py-8 lg:px-8">{children}</main>
