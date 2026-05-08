@@ -16,7 +16,8 @@ export const scopeTypeLabels: Record<string, string> = {
 
 export const accountStatusLabels: Record<string, string> = {
   active: "启用",
-  disabled: "停用"
+  disabled: "停用",
+  deleted: "已删除"
 };
 
 export const genderLabels: Record<string, string> = {

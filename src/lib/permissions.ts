@@ -52,8 +52,23 @@ export function scopeTypeOf(user: AuthUser) {
   return "class";
 }
 
+export function scopeValuesOf(user: AuthUser) {
+  const raw = user.scopeValue;
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed.map((item) => String(item).trim()).filter(Boolean);
+    } catch {
+      // Backward compatible with the previous single-value scopeValue format.
+    }
+    const legacy = String(raw).trim();
+    if (legacy) return [legacy];
+  }
+  return scopeTypeOf(user) === "class" && user.name ? [user.name] : [];
+}
+
 export function scopeValueOf(user: AuthUser) {
-  return user.scopeValue || (scopeTypeOf(user) === "class" ? user.name : "");
+  return scopeValuesOf(user)[0] || "";
 }
 
 export function canAccessModule(user: AuthUser, module: ModuleKey) {
@@ -95,15 +110,20 @@ function andWhere(...items: any[]) {
 
 function scopedClassWhere(user: AuthUser) {
   const type = scopeTypeOf(user);
-  const value = scopeValueOf(user);
+  const values = scopeValuesOf(user);
   if (type === "school") return {};
-  if (!value) return { id: -1 };
-  const numeric = Number(value);
-  if (type === "class" && Number.isInteger(numeric) && numeric > 0) return { id: numeric };
+  if (values.length === 0) return { id: -1 };
+
   if (type === "class") {
-    return { OR: [{ headTeacher: value }, { name: { contains: value } }] };
+    const numericIds = values.map((value) => Number(value)).filter((value) => Number.isInteger(value) && value > 0);
+    const textValues = values.filter((value) => !numericIds.includes(Number(value)));
+    const clauses: any[] = [];
+    if (numericIds.length > 0) clauses.push({ id: { in: numericIds } });
+    for (const value of textValues) clauses.push({ headTeacher: value }, { name: { contains: value } });
+    return clauses.length === 1 ? clauses[0] : { OR: clauses };
   }
-  return { OR: [{ grade: value }, { name: { contains: value } }] };
+
+  return { OR: [{ grade: { in: values } }, ...values.map((value) => ({ name: { contains: value } }))] };
 }
 
 export function classWhereForUser(user: AuthUser, extra: any = {}) {
@@ -112,20 +132,22 @@ export function classWhereForUser(user: AuthUser, extra: any = {}) {
 
 export function studentWhereForUser(user: AuthUser, extra: any = {}) {
   const type = scopeTypeOf(user);
-  const value = scopeValueOf(user);
+  const values = scopeValuesOf(user);
   let scopeWhere: any = {};
   if (type === "department") {
-    scopeWhere = value
-      ? { OR: [{ grade: value }, { classRoom: { grade: value } }, { classRoom: { name: { contains: value } } }] }
+    scopeWhere = values.length > 0
+      ? { OR: [{ grade: { in: values } }, { classRoom: { grade: { in: values } } }, ...values.map((value) => ({ classRoom: { name: { contains: value } } }))] }
       : { id: -1 };
   }
   if (type === "class") {
-    if (!value) scopeWhere = { id: -1 };
+    if (values.length === 0) scopeWhere = { id: -1 };
     else {
-      const numeric = Number(value);
-      scopeWhere = Number.isInteger(numeric) && numeric > 0
-        ? { classId: numeric }
-        : { classRoom: { OR: [{ headTeacher: value }, { name: { contains: value } }] } };
+      const numericIds = values.map((value) => Number(value)).filter((value) => Number.isInteger(value) && value > 0);
+      const textValues = values.filter((value) => !numericIds.includes(Number(value)));
+      const clauses: any[] = [];
+      if (numericIds.length > 0) clauses.push({ classId: { in: numericIds } });
+      for (const value of textValues) clauses.push({ classRoom: { OR: [{ headTeacher: value }, { name: { contains: value } }] } });
+      scopeWhere = clauses.length === 1 ? clauses[0] : { OR: clauses };
     }
   }
   return andWhere(scopeWhere, extra);
