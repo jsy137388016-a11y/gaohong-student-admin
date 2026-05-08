@@ -1,4 +1,4 @@
-# 高宏学生管理系统部署说明
+# 高宏教育三行校区管理系统部署说明
 
 本文档是当前正式部署路线：Next.js standalone + Prisma + PostgreSQL。适用于 VPS、腾讯云轻量服务器、PM2、Nginx 和 Docker。
 

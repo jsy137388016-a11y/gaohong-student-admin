@@ -30,8 +30,8 @@ export function DashboardLayout({
             <GraduationCap size={22} />
           </div>
           <div>
-            <div className="text-base font-semibold text-slate-950">高宏学生管理系统</div>
-            <div className="text-xs text-slate-500">学校运营管理平台</div>
+            <div className="text-base font-semibold text-slate-950">高宏教育三行校区管理系统</div>
+            <div className="text-xs text-slate-500">三行校区管理平台</div>
           </div>
         </div>
         <MainNav modules={modules} />
@@ -40,10 +40,10 @@ export function DashboardLayout({
       <div className="lg:pl-64">
         <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200 bg-white/95 px-4 shadow-sm backdrop-blur lg:px-8">
           <div className="lg:hidden">
-            <div className="text-base font-semibold text-slate-950">高宏学生管理系统</div>
-            <div className="text-xs text-slate-500">学校运营管理平台</div>
+            <div className="text-base font-semibold text-slate-950">高宏教育三行校区管理系统</div>
+            <div className="text-xs text-slate-500">三行校区管理平台</div>
           </div>
-          <div className="hidden text-sm text-slate-500 lg:block">艺考文补机构学生管理后台</div>
+          <div className="hidden text-sm text-slate-500 lg:block">高宏教育三行校区管理系统</div>
           <div className="flex items-center gap-4">
             <div className="text-right">
               <div className="text-sm font-medium text-slate-900">{user.name}</div>

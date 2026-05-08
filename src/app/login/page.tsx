@@ -15,8 +15,8 @@ export default function LoginPage() {
             <GraduationCap size={26} />
           </div>
           <div>
-            <h1 className="text-xl font-semibold text-slate-950">高宏学生管理系统</h1>
-            <p className="text-sm text-slate-500">请使用学校后台账号登录</p>
+            <h1 className="text-xl font-semibold text-slate-950">高宏教育三行校区管理系统</h1>
+            <p className="text-sm text-slate-500">请使用三行校区管理后台账号登录</p>
           </div>
         </div>
 

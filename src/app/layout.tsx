@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "高宏学生管理系统",
-  description: "艺考文补机构学生管理后台"
+  title: "高宏教育三行校区管理系统",
+  description: "高宏教育三行校区管理系统"
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
