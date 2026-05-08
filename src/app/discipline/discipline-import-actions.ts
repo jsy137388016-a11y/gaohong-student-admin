@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { syncAttendanceFromDiscipline } from "@/lib/discipline-sync";
-import { assertStudentsAccess, requireModuleAccess, studentWhereForUser } from "@/lib/permissions";
+import { assertStudentAccess, requireModuleAccess, studentWhereForUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 export interface DisciplineImportRow {
@@ -51,17 +51,27 @@ export async function validateDisciplineImport(rawRows: DisciplineImportRow[]): 
   requireModuleAccess(user, "discipline");
 
   let students: any[] = [];
+  let accessibleStudentIds = new Set<number>();
   try {
-    students = await prisma.student.findMany({
-      where: studentWhereForUser(user, { status: "active" }),
-      include: { classRoom: true }
-    });
+    const [allStudents, accessibleStudents] = await Promise.all([
+      prisma.student.findMany({
+        where: { status: "active" },
+        include: { classRoom: true }
+      }),
+      prisma.student.findMany({
+        where: studentWhereForUser(user, { status: "active" }),
+        select: { id: true }
+      })
+    ]);
+    students = allStudents;
+    accessibleStudentIds = new Set(accessibleStudents.map((student) => student.id));
   } catch {
-    students = await prisma.student.findMany({
-      where: studentWhereForUser(user),
-      include: { classRoom: true }
-    });
-    students = students.filter((student: any) => !["withdrawn", "inactive", "deleted"].includes(String(student.status || "")));
+    const [allStudents, accessibleStudents] = await Promise.all([
+      prisma.student.findMany({ include: { classRoom: true } }),
+      prisma.student.findMany({ where: studentWhereForUser(user), select: { id: true } })
+    ]);
+    students = allStudents.filter((student: any) => !["withdrawn", "inactive", "deleted"].includes(String(student.status || "")));
+    accessibleStudentIds = new Set(accessibleStudents.map((student) => student.id));
   }
 
   const rows: DisciplinePreviewRow[] = [];
@@ -84,6 +94,7 @@ export async function validateDisciplineImport(rawRows: DisciplineImportRow[]): 
 
     const matched = matchStudent(row, students);
     if (!matched) errors.push("未匹配到学生，请检查学号/姓名/班级");
+    else if (!accessibleStudentIds.has(Number(matched.id))) errors.push("当前账号无权导入该学生数据");
     if (violationType && SYNC_TYPES.has(violationType)) warnings.push("该类型会自动同步到考勤管理");
 
     if (errors.length > 0) {
@@ -124,8 +135,6 @@ export async function confirmDisciplineImport(rows: DisciplinePreviewRow[]): Pro
     return sanitizeImportResult({ success: false, message: "没有可导入的数据", imported: 0, failed: 0, attendanceSynced: 0, attendanceSkipped: 0 });
   }
 
-  await assertStudentsAccess(user, importableRows.map((row) => row.matchedStudentId as number));
-
   let imported = 0;
   let failed = 0;
   let attendanceSynced = 0;
@@ -135,6 +144,7 @@ export async function confirmDisciplineImport(rows: DisciplinePreviewRow[]): Pro
     try {
       const recordedAt = parseImportDate(row.date);
       if (!recordedAt || row.matchedStudentId === null) throw new Error("导入行缺少学生或日期");
+      await assertStudentAccess(user, row.matchedStudentId);
       const violationType = row.violationType.trim();
       const description = row.description.trim() || violationType;
       const follower = String(user.name || "批量导入");
