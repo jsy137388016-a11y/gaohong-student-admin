@@ -69,34 +69,36 @@ export async function validateDisciplineImport(rawRows: DisciplineImportRow[]): 
   let errorRows = 0;
   let syncRows = 0;
 
-  for (const row of rawRows) {
+  for (const rawRow of rawRows) {
+    const row = sanitizeImportRow(rawRow);
     const errors: string[] = [];
     const warnings: string[] = [];
-    const violationType = row.violationType?.trim();
+    const violationType = row.violationType.trim();
 
-    if (!row.studentName?.trim() && !row.studentNo?.trim()) errors.push("学号和学生姓名至少填写一项");
-    if (!row.date?.trim()) errors.push("日期为空");
+    if (!row.studentName.trim() && !row.studentNo.trim()) errors.push("学号和学生姓名至少填写一项");
+    if (!row.date.trim()) errors.push("日期为空");
     if (!violationType) errors.push("类型为空");
     const recordedAt = parseImportDate(row.date);
     if (row.date && !recordedAt) errors.push("日期格式不正确");
-    if (row.deductScore !== null && (!Number.isFinite(row.deductScore) || row.deductScore < 0)) errors.push("扣分必须是非负数字");
+    if (row.deductScore === null) errors.push("扣分必须是非负数字");
+    else if (row.deductScore < 0) errors.push("扣分必须是非负数字");
 
     const matched = matchStudent(row, students);
     if (!matched) errors.push("未匹配到学生，请检查学号/姓名/班级");
     if (violationType && SYNC_TYPES.has(violationType)) warnings.push("该类型会自动同步到考勤管理");
 
     if (errors.length > 0) {
-      rows.push({ ...row, status: "error", errorReason: errors.join("；"), warningReason: warnings.join("；"), matchedStudentId: matched?.id ?? null, matchedStudentName: matched?.name ?? null });
+      rows.push(toPreviewRow(row, "error", errors.join("；"), warnings.join("；"), matched));
       errorRows++;
       continue;
     }
 
-    rows.push({ ...row, status: "ok", errorReason: "", warningReason: warnings.join("；"), matchedStudentId: matched.id, matchedStudentName: matched.name });
+    rows.push(toPreviewRow(row, "ok", "", warnings.join("；"), matched));
     okRows++;
     if (violationType && SYNC_TYPES.has(violationType)) syncRows++;
   }
 
-  return { totalRows: rawRows.length, okRows, errorRows, syncRows, rows };
+  return sanitizePreviewResult({ totalRows: rawRows.length, okRows, errorRows, syncRows, rows });
 }
 
 export async function confirmDisciplineImport(rows: DisciplinePreviewRow[]): Promise<DisciplineImportResult> {
@@ -193,4 +195,71 @@ function matchStudent(row: DisciplineImportRow, students: any[]) {
   }
   if (nameMatches.length === 1) return nameMatches[0];
   return null;
+}
+
+
+function sanitizeImportRow(row: DisciplineImportRow): DisciplineImportRow {
+  const rawScore = typeof row.deductScore === "number" && Number.isFinite(row.deductScore) ? row.deductScore : row.deductScore === null ? null : null;
+  return {
+    rowNo: Number.isFinite(Number(row.rowNo)) ? Number(row.rowNo) : 0,
+    studentNo: String(row.studentNo ?? ""),
+    studentName: String(row.studentName ?? ""),
+    className: String(row.className ?? ""),
+    date: String(row.date ?? ""),
+    violationType: String(row.violationType ?? ""),
+    description: String(row.description ?? ""),
+    deductScore: rawScore,
+    result: String(row.result ?? ""),
+    remark: String(row.remark ?? "")
+  };
+}
+
+function toPreviewRow(
+  row: DisciplineImportRow,
+  status: "ok" | "error",
+  errorReason: string,
+  warningReason: string,
+  matched: any | null
+): DisciplinePreviewRow {
+  return {
+    rowNo: row.rowNo,
+    studentNo: row.studentNo,
+    studentName: row.studentName,
+    className: row.className,
+    date: row.date,
+    violationType: row.violationType,
+    description: row.description,
+    deductScore: row.deductScore,
+    result: row.result,
+    remark: row.remark,
+    status,
+    errorReason: String(errorReason || ""),
+    warningReason: String(warningReason || ""),
+    matchedStudentId: safeNumberOrNull(matched?.id),
+    matchedStudentName: matched?.name == null ? null : String(matched.name)
+  };
+}
+
+function sanitizePreviewResult(result: DisciplinePreviewResult): DisciplinePreviewResult {
+  return {
+    totalRows: Number(result.totalRows) || 0,
+    okRows: Number(result.okRows) || 0,
+    errorRows: Number(result.errorRows) || 0,
+    syncRows: Number(result.syncRows) || 0,
+    rows: result.rows.map((row) => sanitizeImportRow(row) as DisciplinePreviewRow).map((row, index) => ({
+      ...row,
+      status: result.rows[index].status === "ok" ? "ok" : "error",
+      errorReason: String(result.rows[index].errorReason || ""),
+      warningReason: String(result.rows[index].warningReason || ""),
+      matchedStudentId: safeNumberOrNull(result.rows[index].matchedStudentId),
+      matchedStudentName: result.rows[index].matchedStudentName == null ? null : String(result.rows[index].matchedStudentName)
+    }))
+  };
+}
+
+
+function safeNumberOrNull(value: unknown) {
+  if (value === null || value === undefined || value === "") return null;
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : null;
 }

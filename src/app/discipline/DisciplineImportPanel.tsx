@@ -237,5 +237,5 @@ function readCell(raw: any[], index: number) {
 function parseNumber(value: string) {
   if (!value) return 0;
   const num = Number(value);
-  return Number.isFinite(num) ? num : NaN;
+  return Number.isFinite(num) ? num : null;
 }
