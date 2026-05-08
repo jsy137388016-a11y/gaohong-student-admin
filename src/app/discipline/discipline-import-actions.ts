@@ -61,7 +61,7 @@ export async function validateDisciplineImport(rawRows: DisciplineImportRow[]): 
       where: studentWhereForUser(user),
       include: { classRoom: true }
     });
-    students = students.filter((s: any) => s.status !== "withdrawn" && s.status !== "inactive" && s.status !== "deleted");
+    students = students.filter((student: any) => !["withdrawn", "inactive", "deleted"].includes(String(student.status || "")));
   }
 
   const rows: DisciplinePreviewRow[] = [];
@@ -69,7 +69,7 @@ export async function validateDisciplineImport(rawRows: DisciplineImportRow[]): 
   let errorRows = 0;
   let syncRows = 0;
 
-  for (const rawRow of rawRows) {
+  for (const rawRow of Array.isArray(rawRows) ? rawRows : []) {
     const row = sanitizeImportRow(rawRow);
     const errors: string[] = [];
     const warnings: string[] = [];
@@ -80,37 +80,51 @@ export async function validateDisciplineImport(rawRows: DisciplineImportRow[]): 
     if (!violationType) errors.push("类型为空");
     const recordedAt = parseImportDate(row.date);
     if (row.date && !recordedAt) errors.push("日期格式不正确");
-    if (row.deductScore === null) errors.push("扣分必须是非负数字");
-    else if (row.deductScore < 0) errors.push("扣分必须是非负数字");
+    if (row.deductScore === null || row.deductScore < 0) errors.push("扣分必须是非负数字");
 
     const matched = matchStudent(row, students);
     if (!matched) errors.push("未匹配到学生，请检查学号/姓名/班级");
     if (violationType && SYNC_TYPES.has(violationType)) warnings.push("该类型会自动同步到考勤管理");
 
     if (errors.length > 0) {
-      rows.push(toPreviewRow(row, "error", errors.join("；"), warnings.join("；"), matched));
+      rows.push(sanitizePreviewRow({
+        row,
+        status: "error",
+        errorReason: errors.join("；"),
+        warningReason: warnings.join("；"),
+        matchedStudentId: matched?.id,
+        matchedStudentName: matched?.name
+      }));
       errorRows++;
       continue;
     }
 
-    rows.push(toPreviewRow(row, "ok", "", warnings.join("；"), matched));
+    rows.push(sanitizePreviewRow({
+      row,
+      status: "ok",
+      errorReason: "",
+      warningReason: warnings.join("；"),
+      matchedStudentId: matched?.id,
+      matchedStudentName: matched?.name
+    }));
     okRows++;
-    if (violationType && SYNC_TYPES.has(violationType)) syncRows++;
+    if (SYNC_TYPES.has(violationType)) syncRows++;
   }
 
-  return sanitizePreviewResult({ totalRows: rawRows.length, okRows, errorRows, syncRows, rows });
+  return sanitizePreviewResult({ totalRows: rawRows?.length, okRows, errorRows, syncRows, rows });
 }
 
 export async function confirmDisciplineImport(rows: DisciplinePreviewRow[]): Promise<DisciplineImportResult> {
   const user = await requireUser();
   requireModuleAccess(user, "discipline");
-  const importableRows = rows.filter((row) => row.status === "ok" && row.matchedStudentId);
+  const cleanRows = (Array.isArray(rows) ? rows : []).map((row) => sanitizePreviewRow({ row, status: row?.status === "ok" ? "ok" : "error" }));
+  const importableRows = cleanRows.filter((row) => row.status === "ok" && row.matchedStudentId !== null);
 
   if (importableRows.length === 0) {
-    return { success: false, message: "没有可导入的数据", imported: 0, failed: 0, attendanceSynced: 0, attendanceSkipped: 0 };
+    return sanitizeImportResult({ success: false, message: "没有可导入的数据", imported: 0, failed: 0, attendanceSynced: 0, attendanceSkipped: 0 });
   }
 
-  await assertStudentsAccess(user, importableRows.map((row) => row.matchedStudentId!));
+  await assertStudentsAccess(user, importableRows.map((row) => row.matchedStudentId as number));
 
   let imported = 0;
   let failed = 0;
@@ -120,21 +134,21 @@ export async function confirmDisciplineImport(rows: DisciplinePreviewRow[]): Pro
   for (const row of importableRows) {
     try {
       const recordedAt = parseImportDate(row.date);
-      if (!recordedAt || !row.matchedStudentId) throw new Error("导入行缺少学生或日期");
+      if (!recordedAt || row.matchedStudentId === null) throw new Error("导入行缺少学生或日期");
       const violationType = row.violationType.trim();
-      const description = row.description?.trim() || violationType;
-      const follower = user.name || "批量导入";
+      const description = row.description.trim() || violationType;
+      const follower = String(user.name || "批量导入");
 
       await prisma.discipline.create({
         data: {
           studentId: row.matchedStudentId,
           violationType,
           description,
-          result: row.result?.trim() || "",
+          result: row.result.trim(),
           deductScore: row.deductScore ?? 0,
           parentNotified: false,
           follower,
-          remark: row.remark?.trim() || null,
+          remark: row.remark.trim() || null,
           recordedAt
         }
       });
@@ -149,8 +163,8 @@ export async function confirmDisciplineImport(rows: DisciplinePreviewRow[]): Pro
       });
       if (sync.synced) attendanceSynced++;
       else if (sync.reason === "duplicate") attendanceSkipped++;
-    } catch (e: any) {
-      console.error("导入纪律记录失败:", e?.message || e);
+    } catch (error: unknown) {
+      console.error("导入纪律记录失败:", error instanceof Error ? error.message : String(error));
       failed++;
     }
   }
@@ -165,11 +179,11 @@ export async function confirmDisciplineImport(rows: DisciplinePreviewRow[]): Pro
   if (attendanceSkipped > 0) parts.push(`跳过 ${attendanceSkipped} 条重复考勤`);
   if (failed > 0) parts.push(`失败 ${failed} 条`);
 
-  return { success: failed === 0, message: parts.join("，"), imported, failed, attendanceSynced, attendanceSkipped };
+  return sanitizeImportResult({ success: failed === 0, message: parts.join("，"), imported, failed, attendanceSynced, attendanceSkipped });
 }
 
 function parseImportDate(value: string) {
-  const text = String(value || "").trim();
+  const text = safeString(value);
   if (!text) return null;
   const normalized = text.includes("T") ? text : text.includes(" ") ? text.replace(" ", "T") : `${text}T00:00:00`;
   const date = new Date(normalized);
@@ -177,19 +191,23 @@ function parseImportDate(value: string) {
 }
 
 function matchStudent(row: DisciplineImportRow, students: any[]) {
-  const studentNo = row.studentNo?.trim();
-  const name = row.studentName?.trim();
-  const className = row.className?.trim();
+  const studentNo = safeString(row.studentNo);
+  const name = safeString(row.studentName);
+  const className = safeString(row.className);
 
   if (studentNo) {
-    const byNo = students.find((student) => student.studentNo && student.studentNo.trim() === studentNo);
+    const byNo = students.find((student) => safeString(student.studentNo) === studentNo);
     if (byNo) return byNo;
   }
 
   if (!name) return null;
-  const nameMatches = students.filter((student) => student.name?.trim() === name);
+  const nameMatches = students.filter((student) => safeString(student.name) === name);
   if (className) {
-    const classMatches = nameMatches.filter((student) => student.classRoom?.name?.trim() === className || `${student.classRoom?.grade || ""} ${student.classRoom?.name || ""}`.trim() === className);
+    const classMatches = nameMatches.filter((student) => {
+      const simpleName = safeString(student.classRoom?.name);
+      const fullName = `${safeString(student.classRoom?.grade)} ${simpleName}`.trim();
+      return simpleName === className || fullName === className;
+    });
     if (classMatches.length === 1) return classMatches[0];
     if (classMatches.length > 1) return null;
   }
@@ -197,30 +215,31 @@ function matchStudent(row: DisciplineImportRow, students: any[]) {
   return null;
 }
 
-
-function sanitizeImportRow(row: DisciplineImportRow): DisciplineImportRow {
-  const rawScore = typeof row.deductScore === "number" && Number.isFinite(row.deductScore) ? row.deductScore : row.deductScore === null ? null : null;
+function sanitizeImportRow(row: any): DisciplineImportRow {
   return {
-    rowNo: Number.isFinite(Number(row.rowNo)) ? Number(row.rowNo) : 0,
-    studentNo: String(row.studentNo ?? ""),
-    studentName: String(row.studentName ?? ""),
-    className: String(row.className ?? ""),
-    date: String(row.date ?? ""),
-    violationType: String(row.violationType ?? ""),
-    description: String(row.description ?? ""),
-    deductScore: rawScore,
-    result: String(row.result ?? ""),
-    remark: String(row.remark ?? "")
+    rowNo: safeNumber(row?.rowNo, 0),
+    studentNo: safeString(row?.studentNo),
+    studentName: safeString(row?.studentName),
+    className: safeString(row?.className),
+    date: safeString(row?.date),
+    violationType: safeString(row?.violationType),
+    description: safeString(row?.description),
+    deductScore: safeNullableNumber(row?.deductScore),
+    result: safeString(row?.result),
+    remark: safeString(row?.remark)
   };
 }
 
-function toPreviewRow(
-  row: DisciplineImportRow,
-  status: "ok" | "error",
-  errorReason: string,
-  warningReason: string,
-  matched: any | null
-): DisciplinePreviewRow {
+function sanitizePreviewRow(input: {
+  row: any;
+  status?: "ok" | "error";
+  errorReason?: unknown;
+  warningReason?: unknown;
+  matchedStudentId?: unknown;
+  matchedStudentName?: unknown;
+}): DisciplinePreviewRow {
+  const row = sanitizeImportRow(input.row);
+  const source = input.row || {};
   return {
     rowNo: row.rowNo,
     studentNo: row.studentNo,
@@ -232,33 +251,61 @@ function toPreviewRow(
     deductScore: row.deductScore,
     result: row.result,
     remark: row.remark,
-    status,
-    errorReason: String(errorReason || ""),
-    warningReason: String(warningReason || ""),
-    matchedStudentId: safeNumberOrNull(matched?.id),
-    matchedStudentName: matched?.name == null ? null : String(matched.name)
+    status: input.status === "ok" ? "ok" : "error",
+    errorReason: safeString(input.errorReason ?? source.errorReason),
+    warningReason: safeString(input.warningReason ?? source.warningReason),
+    matchedStudentId: safeNullableNumber(input.matchedStudentId ?? source.matchedStudentId),
+    matchedStudentName: safeNullableString(input.matchedStudentName ?? source.matchedStudentName)
   };
 }
 
-function sanitizePreviewResult(result: DisciplinePreviewResult): DisciplinePreviewResult {
+function sanitizePreviewResult(result: any): DisciplinePreviewResult {
   return {
-    totalRows: Number(result.totalRows) || 0,
-    okRows: Number(result.okRows) || 0,
-    errorRows: Number(result.errorRows) || 0,
-    syncRows: Number(result.syncRows) || 0,
-    rows: result.rows.map((row) => sanitizeImportRow(row) as DisciplinePreviewRow).map((row, index) => ({
-      ...row,
-      status: result.rows[index].status === "ok" ? "ok" : "error",
-      errorReason: String(result.rows[index].errorReason || ""),
-      warningReason: String(result.rows[index].warningReason || ""),
-      matchedStudentId: safeNumberOrNull(result.rows[index].matchedStudentId),
-      matchedStudentName: result.rows[index].matchedStudentName == null ? null : String(result.rows[index].matchedStudentName)
-    }))
+    totalRows: safeNumber(result?.totalRows, 0),
+    okRows: safeNumber(result?.okRows, 0),
+    errorRows: safeNumber(result?.errorRows, 0),
+    syncRows: safeNumber(result?.syncRows, 0),
+    rows: Array.isArray(result?.rows)
+      ? result.rows.map((row: any) => sanitizePreviewRow({
+          row,
+          status: row?.status === "ok" ? "ok" : "error",
+          errorReason: row?.errorReason,
+          warningReason: row?.warningReason,
+          matchedStudentId: row?.matchedStudentId,
+          matchedStudentName: row?.matchedStudentName
+        }))
+      : []
   };
 }
 
+function sanitizeImportResult(result: any): DisciplineImportResult {
+  return {
+    success: Boolean(result?.success),
+    message: safeString(result?.message),
+    imported: safeNumber(result?.imported, 0),
+    failed: safeNumber(result?.failed, 0),
+    attendanceSynced: safeNumber(result?.attendanceSynced, 0),
+    attendanceSkipped: safeNumber(result?.attendanceSkipped, 0)
+  };
+}
 
-function safeNumberOrNull(value: unknown) {
+function safeString(value: unknown) {
+  if (value === null || value === undefined) return "";
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  return String(value).trim();
+}
+
+function safeNullableString(value: unknown) {
+  const text = safeString(value);
+  return text ? text : null;
+}
+
+function safeNumber(value: unknown, fallback: number) {
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : fallback;
+}
+
+function safeNullableNumber(value: unknown) {
   if (value === null || value === undefined || value === "") return null;
   const numberValue = Number(value);
   return Number.isFinite(numberValue) ? numberValue : null;

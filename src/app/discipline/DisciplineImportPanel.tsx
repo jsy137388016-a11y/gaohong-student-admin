@@ -94,8 +94,8 @@ export function DisciplineImportPanel() {
 
       startTransition(async () => {
         try {
-          const result = await validateDisciplineImport(rows);
-          setPreviewResult(result);
+          const result = await validateDisciplineImport(sanitizeImportRows(rows));
+          setPreviewResult(sanitizePreviewResult(result));
         } catch (e: any) {
           setError(e?.message || "校验失败");
         }
@@ -110,8 +110,8 @@ export function DisciplineImportPanel() {
     setError("");
     startTransition(async () => {
       try {
-        const result = await confirmDisciplineImport(previewResult.rows);
-        setImportResult(result);
+        const result = await confirmDisciplineImport(sanitizePreviewResult(previewResult).rows);
+        setImportResult(sanitizeImportResult(result));
         if (result.success) setPreviewResult(null);
       } catch (e: any) {
         setError(e?.message || "导入失败");
@@ -238,4 +238,78 @@ function parseNumber(value: string) {
   if (!value) return 0;
   const num = Number(value);
   return Number.isFinite(num) ? num : null;
+}
+
+function sanitizeImportRows(rows: DisciplineImportRow[]): DisciplineImportRow[] {
+  return rows.map((row) => ({
+    rowNo: safeNumber(row.rowNo, 0),
+    studentNo: safeString(row.studentNo),
+    studentName: safeString(row.studentName),
+    className: safeString(row.className),
+    date: safeString(row.date),
+    violationType: safeString(row.violationType),
+    description: safeString(row.description),
+    deductScore: safeNullableNumber(row.deductScore),
+    result: safeString(row.result),
+    remark: safeString(row.remark)
+  }));
+}
+
+function sanitizePreviewResult(result: DisciplinePreviewResult): DisciplinePreviewResult {
+  return {
+    totalRows: safeNumber(result?.totalRows, 0),
+    okRows: safeNumber(result?.okRows, 0),
+    errorRows: safeNumber(result?.errorRows, 0),
+    syncRows: safeNumber(result?.syncRows, 0),
+    rows: Array.isArray(result?.rows) ? result.rows.map((row) => ({
+      rowNo: safeNumber(row?.rowNo, 0),
+      studentNo: safeString(row?.studentNo),
+      studentName: safeString(row?.studentName),
+      className: safeString(row?.className),
+      date: safeString(row?.date),
+      violationType: safeString(row?.violationType),
+      description: safeString(row?.description),
+      deductScore: safeNullableNumber(row?.deductScore),
+      result: safeString(row?.result),
+      remark: safeString(row?.remark),
+      status: row?.status === "ok" ? "ok" : "error",
+      errorReason: safeString(row?.errorReason),
+      warningReason: safeString(row?.warningReason),
+      matchedStudentId: safeNullableNumber(row?.matchedStudentId),
+      matchedStudentName: safeNullableString(row?.matchedStudentName)
+    })) : []
+  };
+}
+
+function sanitizeImportResult(result: DisciplineImportResult): DisciplineImportResult {
+  return {
+    success: Boolean(result?.success),
+    message: safeString(result?.message),
+    imported: safeNumber(result?.imported, 0),
+    failed: safeNumber(result?.failed, 0),
+    attendanceSynced: safeNumber(result?.attendanceSynced, 0),
+    attendanceSkipped: safeNumber(result?.attendanceSkipped, 0)
+  };
+}
+
+function safeString(value: unknown) {
+  if (value === null || value === undefined) return "";
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  return String(value).trim();
+}
+
+function safeNullableString(value: unknown) {
+  const text = safeString(value);
+  return text ? text : null;
+}
+
+function safeNumber(value: unknown, fallback: number) {
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : fallback;
+}
+
+function safeNullableNumber(value: unknown) {
+  if (value === null || value === undefined || value === "") return null;
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : null;
 }
