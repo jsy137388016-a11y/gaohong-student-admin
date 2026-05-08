@@ -32,11 +32,16 @@ const roleModules: Record<string, ModuleKey[]> = {
   moral_director: ["dashboard", "students", "classes", "attendance", "discipline", "exams", "focus", "communications"],
   minister: ["dashboard", "students", "classes", "attendance", "discipline", "exams", "focus", "communications"],
   head_teacher: ["dashboard", "students", "classes", "attendance", "discipline", "exams", "focus", "communications"],
+  homeroom_teacher: ["dashboard", "students", "classes", "attendance", "discipline", "exams", "focus", "communications"],
   subject_teacher: ["dashboard", "students", "classes", "attendance", "discipline", "exams"]
 };
 
 export function roleCodeOf(user: AuthUser) {
   return user.roleCode || user.role || "subject_teacher";
+}
+
+export function isHomeroomTeacher(user: AuthUser) {
+  return ["head_teacher", "homeroom_teacher"].includes(roleCodeOf(user));
 }
 
 export function scopeTypeOf(user: AuthUser) {

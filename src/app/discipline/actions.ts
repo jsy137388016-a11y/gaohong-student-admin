@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/auth";
 import { dateValue, numberValue, optionalNumber, textValue } from "@/lib/forms";
 import { assertModuleAccess, assertStudentAccess } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { syncAttendanceFromDiscipline } from "@/lib/discipline-sync";
 
 export async function createDiscipline(formData: FormData): Promise<{ success: boolean; error?: string }> {
   try {
@@ -17,19 +18,27 @@ export async function createDiscipline(formData: FormData): Promise<{ success: b
     if (!violationType) throw new Error("请填写违纪类型");
     const deductScore = numberValue(formData, "deductScore", 0);
     if (deductScore < 0) throw new Error("扣分不能为负数");
+    const description = textValue(formData, "description", false) ?? "";
+    const follower = textValue(formData, "follower", false) ?? "";
+    const recordedAt = dateValue(formData, "recordedAt");
     await prisma.discipline.create({
       data: {
         studentId,
         violationType,
-        description: textValue(formData, "description", false) ?? "",
+        description,
         result: textValue(formData, "result", false) ?? "",
         deductScore,
         parentNotified: formData.get("parentNotified") === "on",
-        follower: textValue(formData, "follower", false) ?? "",
+        follower,
         remark: textValue(formData, "remark", false),
-        recordedAt: dateValue(formData, "recordedAt")
+        recordedAt
       }
     });
+    await syncAttendanceFromDiscipline({ studentId, violationType, recordedAt, description, recorder: follower });
+    revalidatePath("/discipline");
+    revalidatePath("/attendance");
+    revalidatePath("/dashboard");
+    revalidatePath(`/students/${studentId}`);
     return { success: true };
   } catch (e: any) {
     console.error("[createDiscipline]", e?.message ?? e);

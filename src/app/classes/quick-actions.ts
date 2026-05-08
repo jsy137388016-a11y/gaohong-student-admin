@@ -4,28 +4,36 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { dateValue, numberValue, optionalNumber, textValue } from "@/lib/forms";
 import { prisma } from "@/lib/prisma";
+import { syncAttendanceFromDiscipline } from "@/lib/discipline-sync";
+import { isHomeroomTeacher } from "@/lib/permissions";
 
 // ==================== 违纪登记 ====================
 export async function quickCreateDiscipline(formData: FormData) {
   try {
-    await requireUser();
+    const user = await requireUser();
     const studentId = optionalNumber(formData, "studentId");
     if (!studentId) throw new Error("学生ID不能为空");
 
+    const violationType = textValue(formData, "violationType")!;
+    const description = textValue(formData, "description")!;
+    const follower = textValue(formData, "follower")!;
+    const recordedAt = dateValue(formData, "recordedAt");
     await prisma.discipline.create({
       data: {
         studentId,
-        violationType: textValue(formData, "violationType")!,
-        description: textValue(formData, "description")!,
+        violationType,
+        description,
         result: textValue(formData, "result")!,
         parentNotified: formData.get("parentNotified") === "on",
-        follower: textValue(formData, "follower")!,
+        follower,
         remark: textValue(formData, "remark", false),
-        recordedAt: dateValue(formData, "recordedAt")
+        recordedAt
       }
     });
+    await syncAttendanceFromDiscipline({ studentId, violationType, recordedAt, description, recorder: follower });
 
     revalidatePath("/discipline");
+    revalidatePath("/attendance");
     revalidatePath("/dashboard");
     return { success: true, message: "违纪记录已保存" };
   } catch (error) {
@@ -37,11 +45,14 @@ export async function quickCreateDiscipline(formData: FormData) {
 // ==================== 考勤登记 ====================
 export async function quickCreateAttendance(formData: FormData) {
   try {
-    await requireUser();
+    const user = await requireUser();
     const studentId = optionalNumber(formData, "studentId");
     if (!studentId) throw new Error("学生ID不能为空");
 
     const type = textValue(formData, "type")!;
+    if (isHomeroomTeacher(user) && type !== "leave") {
+      throw new Error("班主任只能手动登记请假；迟到、旷课、早退由纪律记录自动同步");
+    }
 
     await prisma.attendance.create({
       data: {
@@ -50,7 +61,8 @@ export async function quickCreateAttendance(formData: FormData) {
         type: type as "normal" | "late" | "leave" | "absent" | "early_leave" | "dorm_absent",
         period: textValue(formData, "period") || "",
         description: textValue(formData, "description", false),
-        recorder: textValue(formData, "recorder")!
+        recorder: textValue(formData, "recorder")!,
+        source: "manual"
       }
     });
 
@@ -83,7 +95,8 @@ export async function quickCreateLeave(formData: FormData) {
         approvalStatus: textValue(formData, "approvalStatus") || "pending",
         approver: textValue(formData, "approver", false),
         description: textValue(formData, "leaveReason", false),
-        recorder: textValue(formData, "recorder")!
+        recorder: textValue(formData, "recorder")!,
+        source: "manual"
       }
     });
 

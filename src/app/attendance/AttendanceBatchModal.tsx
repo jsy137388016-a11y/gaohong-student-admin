@@ -18,11 +18,13 @@ type Student = {
 export function AttendanceBatchModal({
   classes,
   students,
-  userName
+  userName,
+  onlyLeave = false
 }: {
   classes: ClassItem[];
   students: Student[];
   userName: string;
+  onlyLeave?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [classId, setClassId] = useState("");
@@ -34,6 +36,8 @@ export function AttendanceBatchModal({
     if (!classId) return [];
     return students.filter((student) => String(student.classId || student.classRoom?.id || "") === classId);
   }, [classId, students]);
+
+  const availableAttendanceLabels = onlyLeave ? { leave: attendanceLabels.leave } : attendanceLabels;
 
   function close() {
     if (!isPending) {
@@ -89,9 +93,9 @@ export function AttendanceBatchModal({
         className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-brand-200 bg-brand-50 px-4 text-sm font-medium text-brand-700 hover:bg-brand-100"
       >
         <Users size={16} />
-        班级批量录入
+        {onlyLeave ? "班级批量请假" : "班级批量录入"}
       </button>
-      <ModalShell open={open} title="按班级批量录入考勤" onClose={close} maxWidth="max-w-3xl">
+      <ModalShell open={open} title={onlyLeave ? "按班级批量请假" : "按班级批量录入考勤"} onClose={close} maxWidth="max-w-3xl">
         <form action={handleSubmit}>
           <div className="grid gap-4 lg:grid-cols-2">
             <Field label="班级" required>
@@ -109,7 +113,7 @@ export function AttendanceBatchModal({
             </Field>
             <Field label="考勤类型" required>
               <select name="type" required className={inputClass} disabled={isPending}>
-                {Object.entries(attendanceLabels).map(([value, label]) => (
+                {Object.entries(availableAttendanceLabels).map(([value, label]) => (
                   <option key={value} value={value}>
                     {label}
                   </option>
@@ -191,7 +195,7 @@ export function AttendanceBatchModal({
               className="inline-flex h-10 items-center gap-2 rounded-lg bg-brand-600 px-4 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
             >
               <CheckSquare size={16} />
-              {isPending ? "录入中..." : "批量录入"}
+              {isPending ? "录入中..." : onlyLeave ? "批量请假" : "批量录入"}
             </button>
           </div>
         </form>

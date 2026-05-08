@@ -4,6 +4,7 @@ export const roleLabels: Record<string, string> = {
   minister: "部长",
   moral_director: "德育主任",
   head_teacher: "班主任",
+  homeroom_teacher: "班主任",
   subject_teacher: "任课老师"
 };
 
@@ -40,6 +41,11 @@ export const attendanceLabels: Record<string, string> = {
   absent: "旷课",
   early_leave: "早退",
   dorm_absent: "未归寝"
+};
+
+export const attendanceSourceLabels: Record<string, string> = {
+  manual: "手动录入",
+  discipline_sync: "纪律同步"
 };
 
 export const methodLabels: Record<string, string> = {

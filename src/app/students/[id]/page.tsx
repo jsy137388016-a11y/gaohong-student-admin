@@ -12,6 +12,7 @@ import { assertStudentAccess, classWhereForUser, requireModuleAccess } from "@/l
 import {
   ALL_SUBJECTS,
   attendanceLabels,
+  attendanceSourceLabels,
   boardingLabels,
   displayDate,
   displayDateTime,
@@ -314,6 +315,7 @@ export default async function StudentDetailPage({ params }: PageProps) {
                         <th className="px-4 py-3">时间段</th>
                         <th className="px-4 py-3">说明</th>
                         <th className="px-4 py-3">记录人</th>
+                        <th className="px-4 py-3">来源</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 bg-white">
@@ -324,6 +326,7 @@ export default async function StudentDetailPage({ params }: PageProps) {
                           <td className="px-4 py-3">{displayValue(item.period)}</td>
                           <td className="px-4 py-3">{displayValue(item.description)}</td>
                           <td className="px-4 py-3">{displayValue(item.recorder)}</td>
+                          <td className="px-4 py-3">{attendanceSourceLabels[item.source || "manual"] || displayValue(item.source)}</td>
                         </tr>
                       ))}
                     </tbody>

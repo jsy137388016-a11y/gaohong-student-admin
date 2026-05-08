@@ -9,7 +9,7 @@ import { createAttendance } from "./actions";
 
 type Student = { id: number; name: string; phone?: string | null; classRoom?: { name: string } | null };
 
-export function AttendanceCreateModal({ students, userName }: { students: Student[]; userName: string }) {
+export function AttendanceCreateModal({ students, userName, onlyLeave = false }: { students: Student[]; userName: string; onlyLeave?: boolean }) {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState("");
@@ -34,6 +34,8 @@ export function AttendanceCreateModal({ students, userName }: { students: Studen
     });
   }
 
+  const availableAttendanceLabels = onlyLeave ? { leave: attendanceLabels.leave } : attendanceLabels;
+
   return (
     <>
       <button
@@ -42,11 +44,11 @@ export function AttendanceCreateModal({ students, userName }: { students: Studen
         className="inline-flex h-9 items-center gap-1.5 rounded bg-brand-600 px-4 text-sm font-medium text-white hover:bg-brand-700"
       >
         <Plus size={16} />
-        新增考勤
+        {onlyLeave ? "请假登记" : "新增考勤"}
       </button>
 
       {open && (
-        <ModalShell open={open} title="新增考勤" onClose={handleClose} maxWidth="max-w-xl">
+        <ModalShell open={open} title={onlyLeave ? "请假登记" : "新增考勤"} onClose={handleClose} maxWidth="max-w-xl">
             <form action={handleSubmit}>
               <div className="grid gap-4">
                 <Field label="学生" required>
@@ -57,7 +59,7 @@ export function AttendanceCreateModal({ students, userName }: { students: Studen
                 </Field>
                 <Field label="类型" required>
                   <select name="type" required className={inputClass} disabled={isPending}>
-                    {Object.entries(attendanceLabels).map(([value, label]) => (
+                    {Object.entries(availableAttendanceLabels).map(([value, label]) => (
                       <option key={value} value={value}>{label}</option>
                     ))}
                   </select>
@@ -99,7 +101,7 @@ export function AttendanceCreateModal({ students, userName }: { students: Studen
                   className="inline-flex h-10 items-center gap-2 rounded bg-brand-600 px-4 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
                 >
                   <Plus size={16} />
-                  {isPending ? "提交中..." : "新增考勤"}
+                  {isPending ? "提交中..." : onlyLeave ? "提交请假" : "新增考勤"}
                 </button>
               </div>
             </form>

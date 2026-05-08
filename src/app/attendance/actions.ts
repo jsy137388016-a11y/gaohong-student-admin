@@ -4,12 +4,19 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { dateValue, optionalNumber, textValue } from "@/lib/forms";
-import { assertModuleAccess, assertStudentAccess, assertStudentsAccess } from "@/lib/permissions";
+import { assertModuleAccess, assertStudentAccess, assertStudentsAccess, isHomeroomTeacher } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 function redirectToAttendance(notice: string): never {
   const query = new URLSearchParams({ notice });
   redirect(`/attendance?${query.toString()}`);
+}
+
+const teacherManualTypes = new Set(["leave"]);
+function assertManualAttendanceType(user: Awaited<ReturnType<typeof requireUser>>, type: string) {
+  if (isHomeroomTeacher(user) && !teacherManualTypes.has(type)) {
+    throw new Error("班主任只能手动登记请假；迟到、旷课、早退由纪律记录自动同步");
+  }
 }
 
 export async function createAttendance(formData: FormData): Promise<{ success: boolean; error?: string }> {
@@ -19,14 +26,17 @@ export async function createAttendance(formData: FormData): Promise<{ success: b
     const studentId = optionalNumber(formData, "studentId");
     if (!studentId) return { success: false, error: "请选择学生" };
     await assertStudentAccess(user, studentId);
+    const type = textValue(formData, "type") as "normal" | "late" | "leave" | "absent" | "early_leave" | "dorm_absent";
+    assertManualAttendanceType(user, type);
     await prisma.attendance.create({
       data: {
         studentId,
         date: dateValue(formData, "date"),
-        type: textValue(formData, "type") as "normal" | "late" | "leave" | "absent" | "early_leave" | "dorm_absent",
+        type,
         period: textValue(formData, "period", false) || "",
         description: textValue(formData, "description", false),
-        recorder: textValue(formData, "recorder")!
+        recorder: textValue(formData, "recorder")!,
+        source: "manual"
       }
     });
     return { success: true };
@@ -61,6 +71,7 @@ export async function createBatchAttendance(formData: FormData): Promise<{ succe
     await assertStudentsAccess(user, studentIds);
 
     const type = textValue(formData, "type") as "normal" | "late" | "leave" | "absent" | "early_leave" | "dorm_absent";
+    assertManualAttendanceType(user, type);
     const date = dateValue(formData, "date");
     const period = textValue(formData, "period", false) || "";
     const description = textValue(formData, "description", false);
@@ -73,7 +84,8 @@ export async function createBatchAttendance(formData: FormData): Promise<{ succe
         type,
         period,
         description,
-        recorder
+        recorder,
+        source: "manual"
       }))
     });
 

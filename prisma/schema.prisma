@@ -114,6 +114,7 @@ model Attendance {
   approver         String?        // 审批人
   description      String?
   recorder         String
+  source           String         @default("manual") // manual / discipline_sync
   createdAt        DateTime       @default(now())
 
   student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)

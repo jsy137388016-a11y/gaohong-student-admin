@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { requireModuleAccess, studentWhereForUser, classWhereForUser } from "@/lib/permissions";
 import { DeleteDisciplineRowButton } from "./DeleteDisciplineRowButton";
 import { DisciplineCreateForm } from "./DisciplineCreateForm";
+import { DisciplineImportPanel } from "./DisciplineImportPanel";
 
 type PageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
@@ -97,6 +98,7 @@ export default async function DisciplinePage({ searchParams }: PageProps) {
               <SearchButton />
             </form>
             <DisciplineCreateForm students={students} userName={user.name} />
+            <DisciplineImportPanel />
           </div>
           </FilterBar>
         </Panel>

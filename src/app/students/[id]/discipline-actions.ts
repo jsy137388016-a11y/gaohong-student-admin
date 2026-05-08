@@ -4,10 +4,14 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { numberValue, textValue } from "@/lib/forms";
 import { prisma } from "@/lib/prisma";
+import { syncAttendanceFromDiscipline } from "@/lib/discipline-sync";
+import { assertStudentAccess, requireModuleAccess } from "@/lib/permissions";
 
 /** 从学生详情页快速新增违纪记录 */
 export async function createDisciplineFromStudent(studentId: number, formData: FormData) {
-  await requireUser();
+  const user = await requireUser();
+  requireModuleAccess(user, "discipline");
+  await assertStudentAccess(user, studentId);
 
   // 手动校验必填字段，返回中文友好提示
   const violationType = textValue(formData, "violationType");
@@ -44,8 +48,12 @@ export async function createDisciplineFromStudent(studentId: number, formData: F
         recordedAt,
       },
     });
+    await syncAttendanceFromDiscipline({ studentId, violationType, recordedAt, description, recorder: follower });
 
     revalidatePath(`/students/${studentId}`);
+    revalidatePath("/discipline");
+    revalidatePath("/attendance");
+    revalidatePath("/dashboard");
     return { success: true as const, message: "违纪记录已添加" };
   } catch (e: any) {
     return { success: false as const, message: "添加违纪记录失败：" + (e?.message || "未知错误") };

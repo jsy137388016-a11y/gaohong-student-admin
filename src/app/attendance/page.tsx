@@ -2,9 +2,9 @@ import { StudentSearchSelect } from "@/components/StudentSearchSelect";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { ConfirmButton, EmptyText, FilterBar, inputClass, PageTitle, Panel, SearchButton, TableShell } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
-import { attendanceLabels, displayDate, displayValue, firstValue } from "@/lib/format";
+import { attendanceLabels, attendanceSourceLabels, displayDate, displayValue, firstValue } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
-import { requireModuleAccess, studentWhereForUser, classWhereForUser, scopeTypeOf } from "@/lib/permissions";
+import { requireModuleAccess, studentWhereForUser, classWhereForUser, isHomeroomTeacher } from "@/lib/permissions";
 import { deleteAttendance } from "./actions";
 import { AttendanceBatchModal } from "./AttendanceBatchModal";
 import { AttendanceCreateModal } from "./AttendanceCreateModal";
@@ -20,6 +20,7 @@ export default async function AttendancePage({ searchParams }: PageProps) {
   const date = firstValue(params.date) || "";
   const classId = firstValue(params.classId) || "";
   const studentId = firstValue(params.studentId) || "";
+  const isHeadTeacher = isHomeroomTeacher(user);
 
   let classes: any[] = [];
   let students: any[] = [];
@@ -69,7 +70,7 @@ export default async function AttendancePage({ searchParams }: PageProps) {
 
   return (
     <DashboardLayout user={user}>
-      <PageTitle title="考勤管理" description="记录正常、迟到、请假、旷课、早退、未归寝，并支持多条件筛选和按班级批量录入。" />
+      <PageTitle title="考勤管理" description={isHeadTeacher ? "班主任手动保留请假登记；迟到、旷课、早退由纪律记录自动同步。" : "记录考勤状态，并支持多条件筛选和按班级批量录入。"} />
 
       {/* 查询筛选区域 */}
       <div className="mb-6 grid gap-6">
@@ -87,8 +88,8 @@ export default async function AttendancePage({ searchParams }: PageProps) {
               <StudentSearchSelect students={students} name="studentId" placeholder="搜索学生姓名/手机号/班级" />
               <SearchButton />
             </form>
-            <AttendanceCreateModal students={students} userName={user.name} />
-            <AttendanceBatchModal classes={classes} students={students} userName={user.name} />
+            <AttendanceCreateModal students={students} userName={user.name} onlyLeave={isHeadTeacher} />
+            <AttendanceBatchModal classes={classes} students={students} userName={user.name} onlyLeave={isHeadTeacher} />
           </div>
           </FilterBar>
         </Panel>
@@ -108,6 +109,7 @@ export default async function AttendancePage({ searchParams }: PageProps) {
                 <th className="px-5 py-3">时间段</th>
                 <th className="px-5 py-3">说明</th>
                 <th className="px-5 py-3">记录人</th>
+                <th className="px-5 py-3">来源</th>
                 <th className="px-5 py-3 text-right">操作</th>
               </tr>
             </thead>
@@ -121,6 +123,7 @@ export default async function AttendancePage({ searchParams }: PageProps) {
                   <td className="px-5 py-3">{displayValue(item.period)}</td>
                   <td className="px-5 py-3">{displayValue(item.description)}</td>
                   <td className="px-5 py-3">{displayValue(item.recorder)}</td>
+                  <td className="px-5 py-3">{attendanceSourceLabels[item.source || "manual"] || displayValue(item.source)}</td>
                   <td className="px-5 py-3">
                     <form action={deleteAttendance.bind(null, item.id)} className="flex justify-end">
                       <ConfirmButton
