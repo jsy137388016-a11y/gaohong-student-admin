@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { Edit3, Eye } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard-layout";
-import { EmptyText, PageTitle, TableShell } from "@/components/ui";
+import { ConfirmButton, EmptyText, PageTitle, TableShell } from "@/components/ui";
+import { cookies } from "next/headers";
 import { requireUser } from "@/lib/auth";
 import { displayValue } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { requireModuleAccess, studentWhereForUser, classWhereForUser, scopeTypeOf } from "@/lib/permissions";
-import { deactivateClass } from "./actions";
+import { clearUnassignedClassGroup, deactivateClass } from "./actions";
 import { ClassCreateModal } from "./ClassCreateModal";
 import { DeactivateClassButton } from "./deactivate-button";
 
@@ -14,6 +15,7 @@ export default async function ClassesPage() {
   const user = await requireUser();
   requireModuleAccess(user, "classes");
   const isHeadTeacher = scopeTypeOf(user) === "class";
+  const cookieStore = await cookies();
   let classRows: any[] = [];
   let unassignedCount = 0;
   try {
@@ -37,6 +39,7 @@ export default async function ClassesPage() {
       unassignedCount = 0;
     }
   }
+  const hideUnassignedGroup = unassignedCount === 0 && cookieStore.get("gaohong_hide_unassigned_group")?.value === "1";
   let classes: any[] = [];
   try {
     classes = await Promise.all(
@@ -106,23 +109,30 @@ export default async function ClassesPage() {
                   </td>
                 </tr>
               ))}
-              {!isHeadTeacher ? (
+              {!isHeadTeacher && !hideUnassignedGroup ? (
                 <tr>
-                  <td className="px-4 py-3 font-medium text-slate-950">暂不分班</td>
+                  <td className="px-4 py-3 font-medium text-slate-950">暂时不分班</td>
                   <td className="px-4 py-3">—</td>
                   <td className="px-4 py-3">—</td>
                   <td className="px-4 py-3">{unassignedCount}</td>
                   <td className="px-4 py-3">尚未绑定班级的学生</td>
                   <td className="px-4 py-3">
-                    <div className="flex justify-end">
+                    <div className="flex justify-end gap-2">
                       <Link
                         className="inline-flex h-8 items-center gap-1 rounded border border-slate-200 px-3 text-slate-700 hover:bg-slate-50"
                         href="/classes/unassigned"
-                        title="查看暂不分班学生"
+                        title="查看暂时不分班学生"
                       >
                         <Eye size={14} />
                         学生
                       </Link>
+                      <form action={clearUnassignedClassGroup}>
+                        <ConfirmButton
+                          label="清空"
+                          confirmText={unassignedCount > 0 ? "暂时不分班下还有学生，不能清空，请先为学生分配正式班级" : "确认清空并隐藏暂时不分班这一行吗？"}
+                          variant="warning"
+                        />
+                      </form>
                     </div>
                   </td>
                 </tr>

@@ -2,10 +2,42 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { requireUser } from "@/lib/auth";
 import { textValue } from "@/lib/forms";
-import { assertModuleAccess, assertClassAccess, assertStudentAccess } from "@/lib/permissions";
+import { assertModuleAccess, assertClassAccess, assertStudentAccess, studentWhereForUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+
+function redirectToClasses(params: { notice?: string; error?: string }): never {
+  const query = new URLSearchParams();
+  if (params.notice) query.set("notice", params.notice);
+  if (params.error) query.set("error", params.error);
+  redirect(`/classes?${query.toString()}`);
+}
+
+export async function clearUnassignedClassGroup() {
+  const user = await requireUser();
+  assertModuleAccess(user, "classes");
+
+  const count = await prisma.student.count({
+    where: studentWhereForUser(user, { classId: null, status: "active" })
+  });
+
+  if (count > 0) {
+    redirectToClasses({ error: "暂时不分班下还有学生，不能清空，请先为学生分配正式班级" });
+  }
+
+  const cookieStore = await cookies();
+  cookieStore.set("gaohong_hide_unassigned_group", "1", {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365
+  });
+
+  revalidatePath("/classes");
+  redirectToClasses({ notice: "暂时不分班已清空并隐藏" });
+}
 
 export async function createClass(formData: FormData) {
   try {
