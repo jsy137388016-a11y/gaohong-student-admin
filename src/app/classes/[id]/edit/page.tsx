@@ -4,6 +4,7 @@ import { AlertTriangle, ArrowLeft } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Field, inputClass, PageTitle, Panel, PrimaryButton, textareaClass } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
+import { findClassTeacherOption, getClassTeacherOptions } from "@/lib/class-teachers";
 import { prisma } from "@/lib/prisma";
 import { updateClass } from "../../actions";
 
@@ -39,21 +40,15 @@ export default async function EditClassPage({ params }: PageProps) {
     return <ClassNotFound user={user} />;
   }
 
-  let classRoom: any = null;
-  try {
-    classRoom = await prisma.classRoom.findUnique({ where: { id: classId, status: "active" } });
-  } catch {
-    try {
-      classRoom = await prisma.classRoom.findUnique({ where: { id: classId } });
-      if (classRoom && classRoom.status === "inactive") classRoom = null;
-    } catch {
-      return <ClassNotFound user={user} />;
-    }
-  }
+  const classRoom = await prisma.classRoom.findFirst({ where: { id: classId, status: "active" } });
 
   if (!classRoom) {
     return <ClassNotFound user={user} />;
   }
+
+  const teachers = await getClassTeacherOptions();
+  const currentTeacher = findClassTeacherOption(teachers, classRoom.headTeacher);
+  const hasLegacyInvalidTeacher = Boolean(classRoom.headTeacher && !currentTeacher);
 
   return (
     <DashboardLayout user={user}>
@@ -67,7 +62,19 @@ export default async function EditClassPage({ params }: PageProps) {
             <input name="grade" required defaultValue={classRoom.grade} className={inputClass} />
           </Field>
           <Field label="班主任" required>
-            <input name="headTeacher" required defaultValue={classRoom.headTeacher} className={inputClass} />
+            <select name="headTeacherUserId" required defaultValue={currentTeacher ? String(currentTeacher.id) : ""} className={inputClass}>
+              <option value="">{teachers.length === 0 ? "暂无可用班主任账号" : "请选择班主任"}</option>
+              {teachers.map((teacher) => (
+                <option key={teacher.id} value={teacher.id}>
+                  {teacher.name}（{teacher.username}）
+                </option>
+              ))}
+            </select>
+            {hasLegacyInvalidTeacher ? (
+              <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">
+                当前班主任数据异常：{classRoom.headTeacher}。请从下拉列表重新选择可用班主任账号后保存。
+              </p>
+            ) : null}
           </Field>
           <div className="md:col-span-2">
             <Field label="备注">

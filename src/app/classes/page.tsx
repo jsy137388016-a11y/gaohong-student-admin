@@ -4,6 +4,7 @@ import { DashboardLayout } from "@/components/dashboard-layout";
 import { ConfirmButton, EmptyText, PageTitle, TableShell } from "@/components/ui";
 import { cookies } from "next/headers";
 import { requireUser } from "@/lib/auth";
+import { getClassTeacherOptions } from "@/lib/class-teachers";
 import { displayValue } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { requireModuleAccess, studentWhereForUser, classWhereForUser, scopeTypeOf } from "@/lib/permissions";
@@ -16,6 +17,7 @@ export default async function ClassesPage() {
   requireModuleAccess(user, "classes");
   const isHeadTeacher = scopeTypeOf(user) === "class";
   const cookieStore = await cookies();
+  const teachers = isHeadTeacher ? [] : await getClassTeacherOptions();
   let classRows: any[] = [];
   let unassignedCount = 0;
   try {
@@ -56,7 +58,7 @@ export default async function ClassesPage() {
     <DashboardLayout user={user}>
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <PageTitle title="班级管理" description="创建班级，维护班主任、年级和备注。学生档案中可以绑定班级。" />
-        {!isHeadTeacher ? <ClassCreateModal /> : null}
+        {!isHeadTeacher ? <ClassCreateModal teachers={teachers} /> : null}
       </div>
       <div className="mb-6">
         {classes.length === 0 && unassignedCount === 0 ? (

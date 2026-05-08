@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { requireUser } from "@/lib/auth";
+import { getClassTeacherOptions } from "@/lib/class-teachers";
 import { textValue } from "@/lib/forms";
 import { assertModuleAccess, assertClassAccess, assertStudentAccess, studentWhereForUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
@@ -13,6 +14,21 @@ function redirectToClasses(params: { notice?: string; error?: string }): never {
   if (params.notice) query.set("notice", params.notice);
   if (params.error) query.set("error", params.error);
   redirect(`/classes?${query.toString()}`);
+}
+
+function isRedirectError(error: unknown) {
+  return typeof error === "object" && error !== null && "digest" in error && String((error as { digest?: unknown }).digest).startsWith("NEXT_REDIRECT");
+}
+
+async function headTeacherNameFromForm(formData: FormData) {
+  const rawUserId = textValue(formData, "headTeacherUserId");
+  const teacherId = Number(rawUserId);
+  if (!Number.isInteger(teacherId) || teacherId <= 0) throw new Error("请选择有效的班主任账号");
+
+  const teachers = await getClassTeacherOptions();
+  const teacher = teachers.find((item) => item.id === teacherId);
+  if (!teacher) throw new Error("所选班主任账号不可用，请重新选择");
+  return teacher.name;
 }
 
 export async function clearUnassignedClassGroup() {
@@ -43,11 +59,12 @@ export async function createClass(formData: FormData) {
   try {
     const user = await requireUser();
     assertModuleAccess(user, "classes");
+    const headTeacher = await headTeacherNameFromForm(formData);
     await prisma.classRoom.create({
       data: {
         name: textValue(formData, "name")!,
         grade: textValue(formData, "grade")!,
-        headTeacher: textValue(formData, "headTeacher")!,
+        headTeacher,
         remark: textValue(formData, "remark", false)
       }
     });
@@ -64,20 +81,20 @@ export async function updateClass(id: number, formData: FormData) {
     const user = await requireUser();
     assertModuleAccess(user, "classes");
     await assertClassAccess(user, id);
+    const headTeacher = await headTeacherNameFromForm(formData);
     await prisma.classRoom.update({
       where: { id },
       data: {
         name: textValue(formData, "name")!,
         grade: textValue(formData, "grade")!,
-        headTeacher: textValue(formData, "headTeacher")!,
+        headTeacher,
         remark: textValue(formData, "remark", false)
       }
     });
     revalidatePath("/classes");
     redirect("/classes?notice=班级信息已更新");
   } catch (error) {
-    // redirect() throws a special error, re-throw it
-    if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
+    if (isRedirectError(error)) throw error;
     console.error("updateClass error:", error);
     throw new Error("更新班级失败：" + (error instanceof Error ? error.message : "未知错误"));
   }
@@ -111,7 +128,7 @@ export async function deactivateClass(id: number) {
     revalidatePath("/students");
     redirect("/classes?notice=班级已停用，学生已转入暂不分班");
   } catch (error) {
-    if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
+    if (isRedirectError(error)) throw error;
     console.error("deactivateClass error:", error);
     throw new Error("停用班级失败：" + (error instanceof Error ? error.message : "未知错误"));
   }
