@@ -1,7 +1,7 @@
 import { DashboardLayout } from "@/components/dashboard-layout";
-import { AddButton, Field, inputClass, PageTitle, Panel } from "@/components/ui";
+import { AddButton, EmptyText, Field, inputClass, PageTitle, Panel, TableShell } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
-import { firstValue, roleLabels } from "@/lib/format";
+import { displayValue, firstValue, roleLabels } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { createUserAccount } from "./actions";
 
@@ -18,15 +18,30 @@ const roleOptions = [
   ["subject_teacher", "任课老师"]
 ];
 
+type AccountRow = {
+  id: number;
+  username: string | null;
+  name: string | null;
+  role: string | null;
+};
+
 export default async function SettingsPage({ searchParams }: PageProps) {
   const user = await requireUser();
   const params = (await searchParams) || {};
-  const accountCreated = firstValue(params.accountCreated);
-  const accountError = firstValue(params.accountError);
+  const accountCreated = firstValue(params.accountCreated) || firstValue(params.notice);
+  const accountError = firstValue(params.accountError) || firstValue(params.error);
   const canManageAccounts = ["admin", "principal"].includes(user.role);
-  let users: any[] = [];
+  let users: AccountRow[] = [];
   try {
-    users = await prisma.user.findMany({ orderBy: { id: "asc" } });
+    users = await prisma.user.findMany({
+      select: {
+        id: true,
+        username: true,
+        name: true,
+        role: true
+      },
+      orderBy: { id: "asc" }
+    });
   } catch {
     users = [];
   }
@@ -37,28 +52,34 @@ export default async function SettingsPage({ searchParams }: PageProps) {
 
       <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
         <Panel title="账号角色">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50 text-left text-xs font-semibold text-slate-500">
-              <tr>
-                <th className="px-4 py-3">账号</th>
-                <th className="px-4 py-3">姓名</th>
-                <th className="px-4 py-3">角色</th>
-                <th className="px-4 py-3">说明</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 bg-white">
-              {users.map((item) => (
-                <tr key={item.id}>
-                  <td className="px-4 py-3 font-medium">{item.username}</td>
-                  <td className="px-4 py-3">{item.name}</td>
-                  <td className="px-4 py-3">{roleLabels[item.role]}</td>
-                  <td className="px-4 py-3 text-slate-500">
-                    {item.role === "head_teacher" ? "班级的班主任字段需填写此姓名" : "-"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {users.length > 0 ? (
+            <TableShell>
+              <table className="min-w-full divide-y divide-slate-200 text-sm">
+                <thead className="text-left text-xs font-semibold text-slate-500">
+                  <tr>
+                    <th className="px-4 py-3">账号</th>
+                    <th className="px-4 py-3">姓名</th>
+                    <th className="px-4 py-3">角色</th>
+                    <th className="px-4 py-3">说明</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white">
+                  {users.map((item) => (
+                    <tr key={item.id}>
+                      <td className="px-4 py-3 font-medium">{displayValue(item.username)}</td>
+                      <td className="px-4 py-3">{displayValue(item.name)}</td>
+                      <td className="px-4 py-3">{roleLabels[item.role || ""] || displayValue(item.role)}</td>
+                      <td className="px-4 py-3 text-slate-500">
+                        {item.role === "head_teacher" ? "班级的班主任字段需填写此姓名" : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </TableShell>
+          ) : (
+            <EmptyText text="暂无账号数据" />
+          )}
         </Panel>
 
         <Panel title="新增账号">

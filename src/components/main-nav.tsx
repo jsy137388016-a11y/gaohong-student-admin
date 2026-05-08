@@ -27,12 +27,13 @@ const navItems = [
 ];
 
 function isActive(pathname: string, href: string) {
+  if (!pathname) return false;
   if (href === "/dashboard") return pathname === "/dashboard" || pathname === "/";
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 export function MainNav({ mobile = false }: { mobile?: boolean }) {
-  const pathname = usePathname();
+  const pathname = usePathname() || "";
 
   if (mobile) {
     return (

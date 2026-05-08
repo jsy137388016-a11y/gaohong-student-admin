@@ -6,10 +6,10 @@ import { CheckCircle2, XCircle } from "lucide-react";
 
 export function ActionToast() {
   const searchParams = useSearchParams();
-  const pathname = usePathname();
+  const pathname = usePathname() || "/";
   const router = useRouter();
-  const notice = searchParams.get("notice");
-  const error = searchParams.get("error");
+  const notice = searchParams?.get("notice");
+  const error = searchParams?.get("error");
   const [visible, setVisible] = useState(Boolean(notice || error));
 
   useEffect(() => {
@@ -17,7 +17,7 @@ export function ActionToast() {
     if (!notice && !error) return;
     const timer = window.setTimeout(() => {
       setVisible(false);
-      const next = new URLSearchParams(searchParams.toString());
+      const next = new URLSearchParams(searchParams?.toString() || "");
       next.delete("notice");
       next.delete("error");
       const query = next.toString();
