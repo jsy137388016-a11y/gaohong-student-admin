@@ -1,3 +1,5 @@
+import { SCORE_SUBJECT_FULL_SCORES, SCORE_SUBJECT_KEYS, SCORE_SUBJECT_LABELS } from "@/lib/score-import-template";
+
 export const roleLabels: Record<string, string> = {
   admin: "管理员",
   principal: "校长",
@@ -101,12 +103,8 @@ export function scoreTotalFromSubjects(scores: Array<{ subject: string; score: n
   return scores.reduce((sum, s) => sum + (s.score || 0), 0);
 }
 
-export const SUBJECT_FULL_SCORES: Record<string, number> = {
-  "语文": 150, "数学": 150, "外语": 150, "历史/物理": 100,
-  "地理": 100, "政治": 100, "生物": 100, "化学": 100,
-};
+export const SUBJECT_FULL_SCORES: Record<string, number> = Object.fromEntries(
+  SCORE_SUBJECT_KEYS.map((key) => [SCORE_SUBJECT_LABELS[key], SCORE_SUBJECT_FULL_SCORES[key]])
+);
 
-export const ALL_SUBJECTS = [
-  "语文", "数学", "外语", "历史/物理",
-  "地理", "政治", "生物", "化学",
-] as const;
+export const ALL_SUBJECTS = SCORE_SUBJECT_KEYS.map((key) => SCORE_SUBJECT_LABELS[key]);

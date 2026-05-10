@@ -4,26 +4,7 @@ import { useState, useRef, useTransition } from "react";
 import { Upload, Download, CheckCircle, AlertTriangle, XCircle, Loader2 } from "lucide-react";
 import type { ImportRow, PreviewRow, PreviewResult, ImportResult } from "@/app/exams/score-import-actions";
 import { validateScoreImport, confirmScoreImport } from "@/app/exams/score-import-actions";
-
-// ====== 满分配置 ======
-
-type SubjectKey = "chinese" | "math" | "foreignLanguage" | "preferredSubject"
-  | "geography" | "politics" | "biology" | "chemistry";
-
-const FULL_SCORES: Record<SubjectKey, number> = {
-  chinese: 150, math: 150, foreignLanguage: 150, preferredSubject: 100,
-  geography: 100, politics: 100, biology: 100, chemistry: 100,
-};
-
-const SUBJECT_LABELS: Record<SubjectKey, string> = {
-  chinese: "语文", math: "数学", foreignLanguage: "外语", preferredSubject: "历史/物理",
-  geography: "地理", politics: "政治", biology: "生物", chemistry: "化学",
-};
-
-const ALL_SUBJECTS = [
-  "chinese", "math", "foreignLanguage", "preferredSubject",
-  "geography", "politics", "biology", "chemistry",
-] as const;
+import { SCORE_SUBJECT_KEYS, SCORE_SUBJECT_LABELS, SCORE_TEMPLATE_HEADERS } from "@/lib/score-import-template";
 
 // ====== Props ======
 
@@ -47,14 +28,11 @@ export function ScoreImportPanel({ examId, examName, examGrade }: ScoreImportPro
   async function handleDownloadTemplate() {
     try {
       const XLSX = await import("xlsx");
-      const scoreHeaders = ALL_SUBJECTS.map((key) => SUBJECT_LABELS[key]);
-      const headers = ["班级", "姓名", ...scoreHeaders];
-
-      const ws = XLSX.utils.aoa_to_sheet([headers]);
+      const ws = XLSX.utils.aoa_to_sheet([SCORE_TEMPLATE_HEADERS]);
 
       ws["!cols"] = [
         { wch: 10 }, { wch: 10 },
-        ...ALL_SUBJECTS.map(() => ({ wch: 10 })),
+        ...SCORE_SUBJECT_KEYS.map(() => ({ wch: 10 })),
       ];
 
       const wb = XLSX.utils.book_new();
@@ -65,7 +43,7 @@ export function ScoreImportPanel({ examId, examName, examGrade }: ScoreImportPro
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `成绩导入模板_${examGrade || ""}.xlsx`;
+      a.download = `最新成绩导入模板_${examGrade || ""}.xlsx`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (e: any) {
@@ -137,7 +115,7 @@ export function ScoreImportPanel({ examId, examName, examGrade }: ScoreImportPro
         };
 
         // 跳过姓名为空且所有科目都为空的行
-        if (!row.studentName && ALL_SUBJECTS.every((s) => row[s] === null)) continue;
+        if (!row.studentName && SCORE_SUBJECT_KEYS.every((s) => row[s] === null)) continue;
 
         rows.push(row);
       }
@@ -216,7 +194,7 @@ export function ScoreImportPanel({ examId, examName, examGrade }: ScoreImportPro
               className="inline-flex h-10 items-center gap-2 rounded border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50"
             >
               <Download size={16} />
-              下载 Excel 成绩模板
+              下载最新成绩模板
             </button>
             <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded bg-brand-600 px-4 text-sm font-medium text-white hover:bg-brand-700">
               <Upload size={16} />
@@ -293,8 +271,8 @@ export function ScoreImportPanel({ examId, examName, examGrade }: ScoreImportPro
                     <th className="px-3 py-2">行号</th>
                     <th className="px-3 py-2">班级</th>
                     <th className="px-3 py-2">姓名</th>
-                    {ALL_SUBJECTS.map((subj) => (
-                      <th key={subj} className="px-3 py-2">{SUBJECT_LABELS[subj]}</th>
+                    {SCORE_SUBJECT_KEYS.map((subj) => (
+                      <th key={subj} className="px-3 py-2">{SCORE_SUBJECT_LABELS[subj]}</th>
                     ))}
                     <th className="px-3 py-2">状态</th>
                     <th className="px-3 py-2">原因</th>
@@ -310,7 +288,7 @@ export function ScoreImportPanel({ examId, examName, examGrade }: ScoreImportPro
                           ? `${row.studentName}→${row.matchedStudentName}`
                           : row.studentName}
                       </td>
-                      {ALL_SUBJECTS.map((subj) => (
+                      {SCORE_SUBJECT_KEYS.map((subj) => (
                         <td key={subj} className="px-3 py-2">{fmtScore(row[subj])}</td>
                       ))}
                       <td className="px-3 py-2"><RowStatusBadge status={row.status} /></td>

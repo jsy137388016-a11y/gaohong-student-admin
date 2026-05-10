@@ -15,26 +15,7 @@ import {
   getExams,
   createExamQuick,
 } from "@/app/classes/[id]/score-import-actions";
-
-// ====== 满分配置（与后端一致） ======
-
-type SubjectKey = "chinese" | "math" | "foreignLanguage" | "preferredSubject"
-  | "geography" | "politics" | "biology" | "chemistry";
-
-const FULL_SCORES: Record<SubjectKey, number> = {
-  chinese: 150, math: 150, foreignLanguage: 150, preferredSubject: 100,
-  geography: 100, politics: 100, biology: 100, chemistry: 100,
-};
-
-const SUBJECT_ORDER = [
-  "chinese", "math", "foreignLanguage", "preferredSubject",
-  "geography", "politics", "biology", "chemistry",
-] as const;
-
-const SUBJECT_LABELS: Record<SubjectKey, string> = {
-  chinese: "语文", math: "数学", foreignLanguage: "外语", preferredSubject: "历史/物理",
-  geography: "地理", politics: "政治", biology: "生物", chemistry: "化学",
-};
+import { SCORE_SUBJECT_KEYS, SCORE_SUBJECT_LABELS, SCORE_TEMPLATE_HEADERS } from "@/lib/score-import-template";
 
 // ====== Props ======
 
@@ -60,18 +41,15 @@ export function ClassScoreImportButtons({ classId, className, grade }: ClassScor
         return;
       }
 
-      const scoreHeaders = SUBJECT_ORDER.map((key) => SUBJECT_LABELS[key]);
-      const headers = ["班级", "姓名", ...scoreHeaders];
-
       const dataRows = result.students.map((s: any) => [
         className, s.name,
-        ...SUBJECT_ORDER.map(() => ""),
+        ...SCORE_SUBJECT_KEYS.map(() => ""),
       ]);
 
-      const ws = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
+      const ws = XLSX.utils.aoa_to_sheet([SCORE_TEMPLATE_HEADERS, ...dataRows]);
       ws["!cols"] = [
         { wch: 10 }, { wch: 10 },
-        ...SUBJECT_ORDER.map(() => ({ wch: 10 })),
+        ...SCORE_SUBJECT_KEYS.map(() => ({ wch: 10 })),
       ];
 
       const wb = XLSX.utils.book_new();
@@ -82,7 +60,7 @@ export function ClassScoreImportButtons({ classId, className, grade }: ClassScor
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${className}_成绩导入模板.xlsx`;
+      a.download = `${className}_最新成绩导入模板.xlsx`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (e: any) {
@@ -101,7 +79,7 @@ export function ClassScoreImportButtons({ classId, className, grade }: ClassScor
         className="inline-flex h-10 items-center gap-2 rounded border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
       >
         <Download size={16} />
-        下载本班成绩模板
+        下载本班最新成绩模板
       </button>
       <button
         type="button"
@@ -198,18 +176,15 @@ function ClassScoreImportModal({ classId, className, grade, onClose }: ClassScor
         return;
       }
 
-      const scoreHeaders = SUBJECT_ORDER.map((key) => SUBJECT_LABELS[key]);
-      const headers = ["班级", "姓名", ...scoreHeaders];
-
       const dataRows = result.students.map((s: any) => [
         className, s.name,
-        ...SUBJECT_ORDER.map(() => ""),
+        ...SCORE_SUBJECT_KEYS.map(() => ""),
       ]);
 
-      const ws = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
+      const ws = XLSX.utils.aoa_to_sheet([SCORE_TEMPLATE_HEADERS, ...dataRows]);
       ws["!cols"] = [
         { wch: 10 }, { wch: 10 },
-        ...SUBJECT_ORDER.map(() => ({ wch: 10 })),
+        ...SCORE_SUBJECT_KEYS.map(() => ({ wch: 10 })),
       ];
 
       const wb = XLSX.utils.book_new();
@@ -220,7 +195,7 @@ function ClassScoreImportModal({ classId, className, grade, onClose }: ClassScor
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${className}_成绩导入模板.xlsx`;
+      a.download = `${className}_最新成绩导入模板.xlsx`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (e: any) {
@@ -286,7 +261,7 @@ function ClassScoreImportModal({ classId, className, grade, onClose }: ClassScor
           chemistry: parseScore(raw, colMap.chemistry),
         };
 
-        if (!row.name && SUBJECT_ORDER.every((s) => row[s] === null)) continue;
+        if (!row.name && SCORE_SUBJECT_KEYS.every((s) => row[s] === null)) continue;
         rows.push(row);
       }
 
@@ -504,7 +479,7 @@ function ClassScoreImportModal({ classId, className, grade, onClose }: ClassScor
                   className="inline-flex h-10 items-center gap-2 rounded border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50"
                 >
                   <Download size={16} />
-                  下载本班成绩模板
+                  下载本班最新成绩模板
                 </button>
                 <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded bg-brand-600 px-4 text-sm font-medium text-white hover:bg-brand-700">
                   <Upload size={16} />
@@ -553,8 +528,8 @@ function ClassScoreImportModal({ classId, className, grade, onClose }: ClassScor
                       <th className="px-2 py-2">行号</th>
                       <th className="px-2 py-2">班级</th>
                       <th className="px-2 py-2">姓名</th>
-                      {SUBJECT_ORDER.map((subj) => (
-                        <th key={subj} className="px-2 py-2">{SUBJECT_LABELS[subj]}</th>
+                      {SCORE_SUBJECT_KEYS.map((subj) => (
+                        <th key={subj} className="px-2 py-2">{SCORE_SUBJECT_LABELS[subj]}</th>
                       ))}
                       <th className="px-2 py-2">状态</th>
                       <th className="px-2 py-2">错误原因</th>
@@ -571,7 +546,7 @@ function ClassScoreImportModal({ classId, className, grade, onClose }: ClassScor
                             ? `${row.name}→${row.matchedStudentName}`
                             : row.name}
                         </td>
-                        {SUBJECT_ORDER.map((subj) => (
+                        {SCORE_SUBJECT_KEYS.map((subj) => (
                           <td key={subj} className="px-2 py-2">{fmtScore(row[subj])}</td>
                         ))}
                         <td className="px-2 py-2"><RowStatusBadge status={row.status} /></td>

@@ -2,6 +2,12 @@
 
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import {
+  SCORE_SUBJECT_FULL_SCORES,
+  SCORE_SUBJECT_KEYS,
+  SCORE_SUBJECT_LABELS,
+  type ScoreSubjectKey,
+} from "@/lib/score-import-template";
 
 // ====== 类型定义 ======
 
@@ -14,8 +20,8 @@ export interface ScoreImportRow {
   math: number | null;
   foreignLanguage: number | null;
   preferredSubject: number | null;
-  politics: number | null;
   geography: number | null;
+  politics: number | null;
   biology: number | null;
   chemistry: number | null;
 }
@@ -51,26 +57,6 @@ export interface ScoreImportResult {
   skippedErrors: number;
   warningRows: number;
 }
-
-// ====== 满分配置 ======
-
-type SubjectKey = "chinese" | "math" | "foreignLanguage" | "preferredSubject"
-  | "geography" | "politics" | "biology" | "chemistry";
-
-const FULL_SCORES: Record<SubjectKey, number> = {
-  chinese: 150, math: 150, foreignLanguage: 150, preferredSubject: 100,
-  geography: 100, politics: 100, biology: 100, chemistry: 100,
-};
-
-const SUBJECT_LABELS: Record<SubjectKey, string> = {
-  chinese: "语文", math: "数学", foreignLanguage: "外语", preferredSubject: "历史/物理",
-  geography: "地理", politics: "政治", biology: "生物", chemistry: "化学",
-};
-
-const SUBJECT_KEYS = [
-  "chinese", "math", "foreignLanguage", "preferredSubject",
-  "geography", "politics", "biology", "chemistry",
-] as const;
 
 const FOREIGN_SUBJECTS = ["foreignLanguage"] as const;
 const PREFERRED_SUBJECTS = ["preferredSubject"] as const;
@@ -239,21 +225,21 @@ export async function validateScoreImport(
 
     // 4b. 分数校验
     let hasAnyScore = false;
-    const filledSubjects: SubjectKey[] = [];
+    const filledSubjects: ScoreSubjectKey[] = [];
 
-    for (const subj of SUBJECT_KEYS) {
+    for (const subj of SCORE_SUBJECT_KEYS) {
       const val = row[subj];
       if (val === null || val === undefined) continue;
       if (typeof val !== "number" || !Number.isFinite(val)) {
-        errors.push(`${SUBJECT_LABELS[subj]}分数不是有效数字`);
+        errors.push(`${SCORE_SUBJECT_LABELS[subj]}分数不是有效数字`);
         continue;
       }
       if (val < 0) {
-        errors.push(`${SUBJECT_LABELS[subj]}分数不能为负数`);
+        errors.push(`${SCORE_SUBJECT_LABELS[subj]}分数不能为负数`);
         continue;
       }
-      if (val > FULL_SCORES[subj]) {
-        errors.push(`${SUBJECT_LABELS[subj]}分数超过满分 ${FULL_SCORES[subj]}`);
+      if (val > SCORE_SUBJECT_FULL_SCORES[subj]) {
+        errors.push(`${SCORE_SUBJECT_LABELS[subj]}分数超过满分 ${SCORE_SUBJECT_FULL_SCORES[subj]}`);
         continue;
       }
       hasAnyScore = true;
@@ -333,7 +319,7 @@ export async function validateScoreImport(
     let rowDuplicateCount = 0;
     for (const subj of filledSubjects) {
       rowScoreCount++;
-      if (existingScoreSet.has(`${matched.id}__${SUBJECT_LABELS[subj]}`)) {
+      if (existingScoreSet.has(`${matched.id}__${SCORE_SUBJECT_LABELS[subj]}`)) {
         rowDuplicateCount++;
       }
     }
@@ -406,13 +392,13 @@ export async function confirmScoreImport(
 
     let studentScoreCount = 0;
 
-    for (const subj of SUBJECT_KEYS) {
+    for (const subj of SCORE_SUBJECT_KEYS) {
       const val = row[subj];
       if (val === null || val === undefined) continue; // 空值不写入
       if (typeof val !== "number" || !Number.isFinite(val)) continue;
 
-      const subjectName = SUBJECT_LABELS[subj];
-      const fullScore = FULL_SCORES[subj];
+      const subjectName = SCORE_SUBJECT_LABELS[subj];
+      const fullScore = SCORE_SUBJECT_FULL_SCORES[subj];
 
       try {
         // 尝试 upsert：存在则更新，不存在则创建
