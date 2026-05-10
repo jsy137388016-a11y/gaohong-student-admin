@@ -16,3 +16,7 @@ Thumbs.db
 *.tsbuildinfo
 prisma/dev.db
 prisma/*.db
+
+.dev.vars*
+!.dev.vars.example
+!.env.example
