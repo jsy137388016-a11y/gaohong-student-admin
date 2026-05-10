@@ -2,13 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { actionErrorMessage, isNextRedirectError } from "@/lib/action-utils";
 import { requireUser } from "@/lib/auth";
 import { dateValue, optionalNumber, textValue } from "@/lib/forms";
 import { assertModuleAccess, assertStudentAccess, assertStudentsAccess, isHomeroomTeacher } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
-function redirectToAttendance(notice: string): never {
-  const query = new URLSearchParams({ notice });
+function redirectToAttendance(params: { notice?: string; error?: string }): never {
+  const query = new URLSearchParams();
+  if (params.notice) query.set("notice", params.notice);
+  if (params.error) query.set("error", params.error);
   redirect(`/attendance?${query.toString()}`);
 }
 
@@ -42,20 +45,26 @@ export async function createAttendance(formData: FormData): Promise<{ success: b
     return { success: true };
   } catch (error) {
     console.error("createAttendance error:", error);
-    return { success: false, error: "新增考勤失败：" + (error instanceof Error ? error.message : "未知错误") };
+    return { success: false, error: "新增考勤失败：" + actionErrorMessage(error) };
   }
 }
 
 export async function deleteAttendance(id: number) {
-  const user = await requireUser();
-  assertModuleAccess(user, "attendance");
-  const record = await prisma.attendance.findUnique({ where: { id }, select: { studentId: true } });
-  if (!record) throw new Error("记录不存在");
-  await assertStudentAccess(user, record.studentId);
-  await prisma.attendance.delete({ where: { id } });
-  revalidatePath("/attendance");
-  revalidatePath("/dashboard");
-  redirectToAttendance("考勤记录已删除");
+  try {
+    const user = await requireUser();
+    assertModuleAccess(user, "attendance");
+    const record = await prisma.attendance.findUnique({ where: { id }, select: { studentId: true } });
+    if (!record) throw new Error("记录不存在");
+    await assertStudentAccess(user, record.studentId);
+    await prisma.attendance.delete({ where: { id } });
+    revalidatePath("/attendance");
+    revalidatePath("/dashboard");
+    redirectToAttendance({ notice: "考勤记录已删除" });
+  } catch (error) {
+    if (isNextRedirectError(error)) throw error;
+    console.error("deleteAttendance error:", error);
+    redirectToAttendance({ error: "删除考勤失败：" + actionErrorMessage(error) });
+  }
 }
 
 export async function createBatchAttendance(formData: FormData): Promise<{ success: boolean; error?: string; count?: number }> {
@@ -94,6 +103,6 @@ export async function createBatchAttendance(formData: FormData): Promise<{ succe
     return { success: true, count: studentIds.length };
   } catch (error) {
     console.error("createBatchAttendance error:", error);
-    return { success: false, error: "批量录入失败：" + (error instanceof Error ? error.message : "未知错误") };
+    return { success: false, error: "批量录入失败：" + actionErrorMessage(error) };
   }
 }

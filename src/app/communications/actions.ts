@@ -2,13 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { actionErrorMessage, isNextRedirectError } from "@/lib/action-utils";
 import { requireUser } from "@/lib/auth";
 import { dateValue, optionalNumber, textValue } from "@/lib/forms";
 import { assertModuleAccess, assertStudentAccess } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
-function redirectToCommunications(notice: string): never {
-  const query = new URLSearchParams({ notice });
+function redirectToCommunications(params: { notice?: string; error?: string }): never {
+  const query = new URLSearchParams();
+  if (params.notice) query.set("notice", params.notice);
+  if (params.error) query.set("error", params.error);
   redirect(`/communications?${query.toString()}`);
 }
 
@@ -37,18 +40,24 @@ export async function createCommunication(formData: FormData): Promise<{ success
     return { success: true };
   } catch (error) {
     console.error("createCommunication error:", error);
-    return { success: false, error: "新增沟通记录失败：" + (error instanceof Error ? error.message : "未知错误") };
+    return { success: false, error: "新增沟通记录失败：" + actionErrorMessage(error) };
   }
 }
 
 export async function deleteCommunication(id: number) {
-  const user = await requireUser();
-  assertModuleAccess(user, "communications");
-  const record = await prisma.communication.findUnique({ where: { id }, select: { studentId: true } });
-  if (!record) throw new Error("记录不存在");
-  await assertStudentAccess(user, record.studentId);
-  await prisma.communication.delete({ where: { id } });
-  revalidatePath("/communications");
-  revalidatePath("/dashboard");
-  redirectToCommunications("沟通记录已删除");
+  try {
+    const user = await requireUser();
+    assertModuleAccess(user, "communications");
+    const record = await prisma.communication.findUnique({ where: { id }, select: { studentId: true } });
+    if (!record) throw new Error("记录不存在");
+    await assertStudentAccess(user, record.studentId);
+    await prisma.communication.delete({ where: { id } });
+    revalidatePath("/communications");
+    revalidatePath("/dashboard");
+    redirectToCommunications({ notice: "沟通记录已删除" });
+  } catch (error) {
+    if (isNextRedirectError(error)) throw error;
+    console.error("deleteCommunication error:", error);
+    redirectToCommunications({ error: "删除沟通记录失败：" + actionErrorMessage(error) });
+  }
 }

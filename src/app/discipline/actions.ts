@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { actionErrorMessage } from "@/lib/action-utils";
 import { requireUser } from "@/lib/auth";
 import { dateValue, numberValue, optionalNumber, textValue } from "@/lib/forms";
 import { assertModuleAccess, assertStudentAccess } from "@/lib/permissions";
@@ -42,7 +43,7 @@ export async function createDiscipline(formData: FormData): Promise<{ success: b
     return { success: true };
   } catch (e: any) {
     console.error("[createDiscipline]", e?.message ?? e);
-    return { success: false, error: e?.message || "提交失败，请稍后重试" };
+    return { success: false, error: actionErrorMessage(e, "提交失败，请稍后重试") };
   }
 }
 

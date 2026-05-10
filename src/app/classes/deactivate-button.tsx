@@ -12,7 +12,7 @@ export function DeactivateClassButton({
   classId: number;
   className: string;
   studentCount: number;
-  action: (id: number) => Promise<void>;
+  action: (id: number) => Promise<{ success: boolean; error?: string }>;
 }) {
   const [isPending, startTransition] = useTransition();
 
@@ -27,11 +27,12 @@ export function DeactivateClassButton({
     if (!confirmed) return;
 
     startTransition(async () => {
-      try {
-        await action(classId);
-      } catch (err) {
-        alert(`停用失败：${err instanceof Error ? err.message : "未知错误"}`);
+      const result = await action(classId);
+      if (result.success) {
+        window.location.href = "/classes?notice=班级已停用，学生已转入暂不分班";
+        return;
       }
+      alert(result.error || "停用失败");
     });
   }
 

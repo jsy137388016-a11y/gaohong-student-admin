@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { CheckCircle2, XCircle } from "lucide-react";
 
 export function ActionToast() {
   const searchParams = useSearchParams();
   const pathname = usePathname() || "/";
-  const router = useRouter();
   const notice = searchParams?.get("notice");
   const error = searchParams?.get("error");
   const [visible, setVisible] = useState(Boolean(notice || error));
@@ -21,10 +20,10 @@ export function ActionToast() {
       next.delete("notice");
       next.delete("error");
       const query = next.toString();
-      router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+      window.history.replaceState(null, "", query ? `${pathname}?${query}` : pathname);
     }, 3200);
     return () => window.clearTimeout(timer);
-  }, [notice, error, pathname, router, searchParams]);
+  }, [notice, error, pathname, searchParams]);
 
   if (!visible || (!notice && !error)) return null;
 
