@@ -18,27 +18,22 @@ import {
 
 // ====== 满分配置（与后端一致） ======
 
-type SubjectKey = "rawScore" | "assignedScore" | "chinese" | "math" | "foreignLanguage" | "preferredSubject"
-  | "geography" | "geographyAssigned" | "politics" | "politicsAssigned"
-  | "chemistry" | "chemistryAssigned" | "biology" | "biologyAssigned";
+type SubjectKey = "chinese" | "math" | "foreignLanguage" | "preferredSubject"
+  | "geography" | "politics" | "biology" | "chemistry";
 
 const FULL_SCORES: Record<SubjectKey, number> = {
-  rawScore: 750, assignedScore: 750, chinese: 150, math: 150, foreignLanguage: 150, preferredSubject: 100,
-  geography: 100, geographyAssigned: 100, politics: 100, politicsAssigned: 100,
-  chemistry: 100, chemistryAssigned: 100, biology: 100, biologyAssigned: 100,
+  chinese: 150, math: 150, foreignLanguage: 150, preferredSubject: 100,
+  geography: 100, politics: 100, biology: 100, chemistry: 100,
 };
 
 const SUBJECT_ORDER = [
-  "rawScore", "assignedScore", "chinese", "math", "foreignLanguage", "preferredSubject",
-  "geography", "geographyAssigned", "politics", "politicsAssigned",
-  "chemistry", "chemistryAssigned", "biology", "biologyAssigned",
+  "chinese", "math", "foreignLanguage", "preferredSubject",
+  "geography", "politics", "biology", "chemistry",
 ] as const;
 
 const SUBJECT_LABELS: Record<SubjectKey, string> = {
-  rawScore: "原始分", assignedScore: "赋分", chinese: "语文", math: "数学",
-  foreignLanguage: "外语", preferredSubject: "历史/物理", geography: "地理", geographyAssigned: "地理赋分",
-  politics: "政治", politicsAssigned: "政治赋分", chemistry: "化学", chemistryAssigned: "化学赋分",
-  biology: "生物", biologyAssigned: "生物赋分",
+  chinese: "语文", math: "数学", foreignLanguage: "外语", preferredSubject: "历史/物理",
+  geography: "地理", politics: "政治", biology: "生物", chemistry: "化学",
 };
 
 // ====== Props ======
@@ -66,25 +61,17 @@ export function ClassScoreImportButtons({ classId, className, grade }: ClassScor
       }
 
       const scoreHeaders = SUBJECT_ORDER.map((key) => SUBJECT_LABELS[key]);
-      const headers = ["班级", "姓名", "手机号", ...scoreHeaders, "备注"];
-
-      const tipRow = [
-        "", "", "",
-        ...SUBJECT_ORDER.map((key) => `满分${FULL_SCORES[key]}`),
-        "",
-      ];
+      const headers = ["班级", "姓名", ...scoreHeaders];
 
       const dataRows = result.students.map((s: any) => [
-        className, s.name, s.phone,
+        className, s.name,
         ...SUBJECT_ORDER.map(() => ""),
-        "",
       ]);
 
-      const ws = XLSX.utils.aoa_to_sheet([headers, tipRow, ...dataRows]);
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
       ws["!cols"] = [
-        { wch: 10 }, { wch: 10 }, { wch: 14 },
+        { wch: 10 }, { wch: 10 },
         ...SUBJECT_ORDER.map(() => ({ wch: 10 })),
-        { wch: 16 },
       ];
 
       const wb = XLSX.utils.book_new();
@@ -212,25 +199,17 @@ function ClassScoreImportModal({ classId, className, grade, onClose }: ClassScor
       }
 
       const scoreHeaders = SUBJECT_ORDER.map((key) => SUBJECT_LABELS[key]);
-      const headers = ["班级", "姓名", "手机号", ...scoreHeaders, "备注"];
-
-      const tipRow = [
-        "", "", "",
-        ...SUBJECT_ORDER.map((key) => `满分${FULL_SCORES[key]}`),
-        "",
-      ];
+      const headers = ["班级", "姓名", ...scoreHeaders];
 
       const dataRows = result.students.map((s: any) => [
-        className, s.name, s.phone,
+        className, s.name,
         ...SUBJECT_ORDER.map(() => ""),
-        "",
       ]);
 
-      const ws = XLSX.utils.aoa_to_sheet([headers, tipRow, ...dataRows]);
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
       ws["!cols"] = [
-        { wch: 10 }, { wch: 10 }, { wch: 14 },
+        { wch: 10 }, { wch: 10 },
         ...SUBJECT_ORDER.map(() => ({ wch: 10 })),
-        { wch: 16 },
       ];
 
       const wb = XLSX.utils.book_new();
@@ -291,28 +270,20 @@ function ClassScoreImportModal({ classId, className, grade, onClose }: ClassScor
         const hasData = raw.some((cell: any) => cell !== "" && cell !== null && cell !== undefined);
         if (!hasData) continue;
         const firstVal = String(raw[0] || "").trim();
-        if (!firstVal && String(raw[colMap.rawScore >= 0 ? colMap.rawScore : 3] || "").includes("满分")) continue;
+        if (!firstVal && String(raw[colMap.chinese >= 0 ? colMap.chinese : 2] || "").includes("满分")) continue;
 
         const row: ScoreImportRow = {
           rowNo: i + 1,
           className: colMap.className >= 0 ? String(raw[colMap.className] || "").trim() : "",
           name: colMap.name >= 0 ? String(raw[colMap.name] || "").trim() : "",
-          phone: colMap.phone >= 0 ? String(raw[colMap.phone] || "").trim() : "",
-          rawScore: parseScore(raw, colMap.rawScore),
-          assignedScore: parseScore(raw, colMap.assignedScore),
           chinese: parseScore(raw, colMap.chinese),
           math: parseScore(raw, colMap.math),
           foreignLanguage: parseScore(raw, colMap.foreignLanguage),
           preferredSubject: parseScore(raw, colMap.preferredSubject),
           geography: parseScore(raw, colMap.geography),
-          geographyAssigned: parseScore(raw, colMap.geographyAssigned),
           politics: parseScore(raw, colMap.politics),
-          politicsAssigned: parseScore(raw, colMap.politicsAssigned),
-          chemistry: parseScore(raw, colMap.chemistry),
-          chemistryAssigned: parseScore(raw, colMap.chemistryAssigned),
           biology: parseScore(raw, colMap.biology),
-          biologyAssigned: parseScore(raw, colMap.biologyAssigned),
-          remark: colMap.remark >= 0 ? String(raw[colMap.remark] || "").trim() : "",
+          chemistry: parseScore(raw, colMap.chemistry),
         };
 
         if (!row.name && SUBJECT_ORDER.every((s) => row[s] === null)) continue;
@@ -582,7 +553,6 @@ function ClassScoreImportModal({ classId, className, grade, onClose }: ClassScor
                       <th className="px-2 py-2">行号</th>
                       <th className="px-2 py-2">班级</th>
                       <th className="px-2 py-2">姓名</th>
-                      <th className="px-2 py-2">手机号</th>
                       {SUBJECT_ORDER.map((subj) => (
                         <th key={subj} className="px-2 py-2">{SUBJECT_LABELS[subj]}</th>
                       ))}
@@ -601,7 +571,6 @@ function ClassScoreImportModal({ classId, className, grade, onClose }: ClassScor
                             ? `${row.name}→${row.matchedStudentName}`
                             : row.name}
                         </td>
-                        <td className="px-2 py-2">{row.phone || "—"}</td>
                         {SUBJECT_ORDER.map((subj) => (
                           <td key={subj} className="px-2 py-2">{fmtScore(row[subj])}</td>
                         ))}
@@ -740,32 +709,22 @@ function fmtScore(val: number | null): string {
 
 function buildColumnMap(headers: string[]): Record<string, number> {
   const map: Record<string, number> = {
-    className: -1, name: -1, phone: -1,
-    rawScore: -1, assignedScore: -1, chinese: -1, math: -1, foreignLanguage: -1, preferredSubject: -1,
-    geography: -1, geographyAssigned: -1, politics: -1, politicsAssigned: -1,
-    chemistry: -1, chemistryAssigned: -1, biology: -1, biologyAssigned: -1,
-    remark: -1,
+    className: -1, name: -1,
+    chinese: -1, math: -1, foreignLanguage: -1, preferredSubject: -1,
+    geography: -1, politics: -1, biology: -1, chemistry: -1,
   };
 
   const aliases: Record<string, string[]> = {
-    className: ["班级", "班", "班级名称", "class"],
-    name: ["姓名", "学生姓名", "名字", "学生", "name", "student_name"],
-    phone: ["手机号", "手机", "电话", "phone", "联系方式"],
-    rawScore: ["原始分", "原始总分", "rawscore", "raw_score"],
-    assignedScore: ["赋分", "总赋分", "赋分总分", "assignedscore", "assigned_score"],
-    chinese: ["语文", "chinese", "yuwen"],
-    math: ["数学", "math", "shuxue"],
-    foreignLanguage: ["外语", "英语", "日语", "俄语", "foreign", "english", "yingyu"],
-    preferredSubject: ["历史/物理", "物理/历史", "历史物理", "首选科目", "首选", "preferred"],
-    geography: ["地理", "geography", "dili"],
-    geographyAssigned: ["地理赋分", "地理等级分", "geography_assigned"],
-    politics: ["政治", "politics", "zhengzhi"],
-    politicsAssigned: ["政治赋分", "政治等级分", "politics_assigned"],
-    chemistry: ["化学", "chemistry", "huaxue"],
-    chemistryAssigned: ["化学赋分", "化学等级分", "chemistry_assigned"],
-    biology: ["生物", "biology", "shengwu"],
-    biologyAssigned: ["生物赋分", "生物等级分", "biology_assigned"],
-    remark: ["备注", "说明", "remark", "note"],
+    className: ["班级"],
+    name: ["姓名"],
+    chinese: ["语文"],
+    math: ["数学"],
+    foreignLanguage: ["外语"],
+    preferredSubject: ["历史/物理"],
+    geography: ["地理"],
+    politics: ["政治"],
+    biology: ["生物"],
+    chemistry: ["化学"],
   };
 
   for (let i = 0; i < headers.length; i++) {
@@ -773,17 +732,6 @@ function buildColumnMap(headers: string[]): Record<string, number> {
     for (const [field, fieldAliases] of Object.entries(aliases)) {
       if (map[field] >= 0) continue;
       if (fieldAliases.some((alias) => h === normalizeHeader(alias))) map[field] = i;
-    }
-  }
-
-  for (let i = 0; i < headers.length; i++) {
-    const h = normalizeHeader(headers[i]);
-    for (const [field, fieldAliases] of Object.entries(aliases)) {
-      if (map[field] >= 0) continue;
-      if (fieldAliases.some((alias) => {
-        const normalizedAlias = normalizeHeader(alias);
-        return normalizedAlias.length > 2 && h.includes(normalizedAlias);
-      })) map[field] = i;
     }
   }
 

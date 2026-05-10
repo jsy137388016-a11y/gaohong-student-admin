@@ -10,22 +10,14 @@ export interface ScoreImportRow {
   rowNo: number;
   className: string;
   name: string;
-  phone: string;
-  rawScore: number | null;
-  assignedScore: number | null;
   chinese: number | null;
   math: number | null;
   foreignLanguage: number | null;
   preferredSubject: number | null;
-  geography: number | null;
-  geographyAssigned: number | null;
   politics: number | null;
-  politicsAssigned: number | null;
-  chemistry: number | null;
-  chemistryAssigned: number | null;
+  geography: number | null;
   biology: number | null;
-  biologyAssigned: number | null;
-  remark: string;
+  chemistry: number | null;
 }
 
 /** 校验后预览行 */
@@ -62,27 +54,22 @@ export interface ScoreImportResult {
 
 // ====== 满分配置 ======
 
-type SubjectKey = "rawScore" | "assignedScore" | "chinese" | "math" | "foreignLanguage" | "preferredSubject"
-  | "geography" | "geographyAssigned" | "politics" | "politicsAssigned"
-  | "chemistry" | "chemistryAssigned" | "biology" | "biologyAssigned";
+type SubjectKey = "chinese" | "math" | "foreignLanguage" | "preferredSubject"
+  | "geography" | "politics" | "biology" | "chemistry";
 
 const FULL_SCORES: Record<SubjectKey, number> = {
-  rawScore: 750, assignedScore: 750, chinese: 150, math: 150, foreignLanguage: 150, preferredSubject: 100,
-  geography: 100, geographyAssigned: 100, politics: 100, politicsAssigned: 100,
-  chemistry: 100, chemistryAssigned: 100, biology: 100, biologyAssigned: 100,
+  chinese: 150, math: 150, foreignLanguage: 150, preferredSubject: 100,
+  geography: 100, politics: 100, biology: 100, chemistry: 100,
 };
 
 const SUBJECT_LABELS: Record<SubjectKey, string> = {
-  rawScore: "原始分", assignedScore: "赋分", chinese: "语文", math: "数学",
-  foreignLanguage: "外语", preferredSubject: "历史/物理", geography: "地理", geographyAssigned: "地理赋分",
-  politics: "政治", politicsAssigned: "政治赋分", chemistry: "化学", chemistryAssigned: "化学赋分",
-  biology: "生物", biologyAssigned: "生物赋分",
+  chinese: "语文", math: "数学", foreignLanguage: "外语", preferredSubject: "历史/物理",
+  geography: "地理", politics: "政治", biology: "生物", chemistry: "化学",
 };
 
 const SUBJECT_KEYS = [
-  "rawScore", "assignedScore", "chinese", "math", "foreignLanguage", "preferredSubject",
-  "geography", "geographyAssigned", "politics", "politicsAssigned",
-  "chemistry", "chemistryAssigned", "biology", "biologyAssigned",
+  "chinese", "math", "foreignLanguage", "preferredSubject",
+  "geography", "politics", "biology", "chemistry",
 ] as const;
 
 const FOREIGN_SUBJECTS = ["foreignLanguage"] as const;
@@ -102,7 +89,7 @@ export async function getClassStudents(classId: number) {
     const students = await prisma.student.findMany({
       where: { classId, status: "active" },
       orderBy: { name: "asc" },
-      select: { id: true, name: true, phone: true },
+      select: { id: true, name: true },
     });
 
     return {
@@ -112,7 +99,6 @@ export async function getClassStudents(classId: number) {
       students: students.map((s: any) => ({
         id: s.id,
         name: s.name,
-        phone: s.phone || "",
       })),
     };
   } catch (e: any) {
@@ -445,7 +431,6 @@ export async function confirmScoreImport(
               score: val,
               fullScore,
               classId,
-              remark: row.remark || null,
             },
           });
           updatedScores++;
@@ -458,7 +443,6 @@ export async function confirmScoreImport(
               subject: subjectName,
               score: val,
               fullScore,
-              remark: row.remark || null,
             },
           });
           importedScores++;
@@ -497,33 +481,10 @@ export async function confirmScoreImport(
 
 function matchClassStudent(row: ScoreImportRow, classStudents: any[], className: string): any | null {
   const name = row.name?.trim() || "";
-  const phone = row.phone?.trim() || "";
 
   if (!name) return null;
 
-  // 1. 手机号匹配
-  if (phone) {
-    const byPhone = classStudents.filter((s: any) => s.phone && s.phone.trim() === phone);
-    if (byPhone.length === 1) return byPhone[0];
-    if (byPhone.length > 1) {
-      // 手机号匹配到多人，再按姓名筛选
-      const byName = byPhone.filter((s: any) => s.name && s.name.trim() === name);
-      if (byName.length === 1) return byName[0];
-      return null;
-    }
-  }
-
-  // 2. 当前班级+姓名匹配
   const byName = classStudents.filter((s: any) => s.name && s.name.trim() === name);
   if (byName.length === 1) return byName[0];
-  if (byName.length > 1) {
-    // 同班同名，看手机号能否区分
-    if (phone) {
-      const byNameAndPhone = byName.filter((s: any) => s.phone && s.phone.trim() === phone);
-      if (byNameAndPhone.length === 1) return byNameAndPhone[0];
-    }
-    return null;
-  }
-
   return null;
 }

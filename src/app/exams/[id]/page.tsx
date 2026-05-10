@@ -3,7 +3,7 @@ import { AlertTriangle, ArrowLeft } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { DeleteButton, Field, inputClass, PageTitle, Panel, TableShell } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
-import { displayDate, firstValue, scoreTotalFromSubjects, ALL_SUBJECTS, SUBJECT_FULL_SCORES } from "@/lib/format";
+import { displayDate, firstValue, ALL_SUBJECTS } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { classWhereForUser, requireModuleAccess, studentWhereForUser } from "@/lib/permissions";
 import { deleteScore } from "../actions";
@@ -88,14 +88,9 @@ export default async function ExamDetailPage({ params, searchParams }: PageProps
     studentMap.get(sid)!.scores.push(s);
   }
 
-  // 计算总分并排名
-  const ranked = Array.from(studentMap.entries())
-    .map(([studentId, data]) => {
-      const total = scoreTotalFromSubjects(data.scores);
-      return { studentId, student: data.student, scores: data.scores, total };
-    })
-    .sort((a, b) => b.total - a.total)
-    .map((item, index) => ({ ...item, rank: index + 1 }));
+  const rows = Array.from(studentMap.entries())
+    .map(([studentId, data]) => ({ studentId, student: data.student, scores: data.scores }))
+    .sort((a, b) => String(a.student?.classRoom?.name || "").localeCompare(String(b.student?.classRoom?.name || ""), "zh-CN") || String(a.student?.name || "").localeCompare(String(b.student?.name || ""), "zh-CN"));
 
   // 检查这次考试有哪些科目
   const examSubjects = new Set<string>();
@@ -107,7 +102,7 @@ export default async function ExamDetailPage({ params, searchParams }: PageProps
 
   return (
     <DashboardLayout user={user}>
-      <PageTitle title={exam.name} description={`${exam.grade} · ${displayDate(exam.examDate)} · 查看各科成绩、总分、排名。`} />
+      <PageTitle title={exam.name} description={`${exam.grade} · ${displayDate(exam.examDate)} · 查看各科成绩。`} />
 
       {/* Excel 批量导入 */}
       <div className="mb-6">
@@ -123,7 +118,7 @@ export default async function ExamDetailPage({ params, searchParams }: PageProps
                 <option key={item.id} value={item.id}>{item.grade} {item.name}</option>
               ))}
             </select>
-            <button className="h-10 rounded border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50">查看排名</button>
+            <button className="h-10 rounded border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50">查询</button>
           </form>
         </Panel>
       </div>
@@ -132,18 +127,16 @@ export default async function ExamDetailPage({ params, searchParams }: PageProps
         <table className="min-w-full divide-y divide-slate-200 text-sm">
           <thead className="bg-slate-50 text-left text-xs font-semibold text-slate-500">
             <tr>
-              <th className="px-4 py-3">排名</th>
-              <th className="px-4 py-3">学生</th>
               <th className="px-4 py-3">班级</th>
+              <th className="px-4 py-3">姓名</th>
               {displaySubjects.map((subj) => (
                 <th key={subj} className="px-4 py-3">{subj}</th>
               ))}
-              <th className="px-4 py-3">总分</th>
               <th className="px-4 py-3 text-right">操作</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 bg-white">
-            {ranked.map((item) => {
+            {rows.map((item) => {
               // 构建科目→分数映射
               const subjectScoreMap = new Map<string, number>();
               const firstScore = item.scores[0];
@@ -152,15 +145,13 @@ export default async function ExamDetailPage({ params, searchParams }: PageProps
               }
               return (
                 <tr key={item.studentId}>
-                  <td className="px-4 py-3 font-semibold">{item.rank}</td>
-                  <td className="px-4 py-3 font-medium">{item.student?.name || "-"}</td>
                   <td className="px-4 py-3">{item.student?.classRoom?.name || "未分班"}</td>
+                  <td className="px-4 py-3 font-medium">{item.student?.name || "-"}</td>
                   {displaySubjects.map((subj) => (
                     <td key={subj} className="px-4 py-3">
                       {subjectScoreMap.has(subj) ? subjectScoreMap.get(subj) : "-"}
                     </td>
                   ))}
-                  <td className="px-4 py-3 font-semibold">{item.total}</td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-1">
                       {firstScore ? (

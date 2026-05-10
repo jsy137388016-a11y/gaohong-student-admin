@@ -102,11 +102,11 @@ export function scoreTotalFromSubjects(scores: Array<{ subject: string; score: n
 }
 
 export const SUBJECT_FULL_SCORES: Record<string, number> = {
-  "语文": 150, "数学": 150, "英语": 150, "日语": 150, "俄语": 150,
-  "物理": 100, "历史": 100, "地理": 100, "政治": 100, "生物": 100, "化学": 100,
+  "语文": 150, "数学": 150, "外语": 150, "历史/物理": 100,
+  "地理": 100, "政治": 100, "生物": 100, "化学": 100,
 };
 
 export const ALL_SUBJECTS = [
-  "语文", "数学", "英语", "日语", "俄语",
-  "物理", "历史", "地理", "政治", "生物", "化学",
+  "语文", "数学", "外语", "历史/物理",
+  "地理", "政治", "生物", "化学",
 ] as const;

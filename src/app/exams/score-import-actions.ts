@@ -8,24 +8,15 @@ import { prisma } from "@/lib/prisma";
 export interface ImportRow {
   rowNo: number;
   className: string;
-  studentNo: string;
   studentName: string;
-  phone: string;
-  rawScore: number | null;
-  assignedScore: number | null;
   chinese: number | null;
   math: number | null;
   foreignLanguage: number | null;
   preferredSubject: number | null;
-  geography: number | null;
-  geographyAssigned: number | null;
   politics: number | null;
-  politicsAssigned: number | null;
-  chemistry: number | null;
-  chemistryAssigned: number | null;
+  geography: number | null;
   biology: number | null;
-  biologyAssigned: number | null;
-  remark: string;
+  chemistry: number | null;
 }
 
 export interface PreviewRow extends ImportRow {
@@ -56,27 +47,22 @@ export interface ImportResult {
 
 // ====== 满分配置 ======
 
-type SubjectKey = "rawScore" | "assignedScore" | "chinese" | "math" | "foreignLanguage" | "preferredSubject"
-  | "geography" | "geographyAssigned" | "politics" | "politicsAssigned"
-  | "chemistry" | "chemistryAssigned" | "biology" | "biologyAssigned";
+type SubjectKey = "chinese" | "math" | "foreignLanguage" | "preferredSubject"
+  | "geography" | "politics" | "biology" | "chemistry";
 
 const FULL_SCORES: Record<SubjectKey, number> = {
-  rawScore: 750, assignedScore: 750, chinese: 150, math: 150, foreignLanguage: 150, preferredSubject: 100,
-  geography: 100, geographyAssigned: 100, politics: 100, politicsAssigned: 100,
-  chemistry: 100, chemistryAssigned: 100, biology: 100, biologyAssigned: 100,
+  chinese: 150, math: 150, foreignLanguage: 150, preferredSubject: 100,
+  geography: 100, politics: 100, biology: 100, chemistry: 100,
 };
 
 const SUBJECT_LABELS: Record<SubjectKey, string> = {
-  rawScore: "原始分", assignedScore: "赋分", chinese: "语文", math: "数学",
-  foreignLanguage: "外语", preferredSubject: "历史/物理", geography: "地理", geographyAssigned: "地理赋分",
-  politics: "政治", politicsAssigned: "政治赋分", chemistry: "化学", chemistryAssigned: "化学赋分",
-  biology: "生物", biologyAssigned: "生物赋分",
+  chinese: "语文", math: "数学", foreignLanguage: "外语", preferredSubject: "历史/物理",
+  geography: "地理", politics: "政治", biology: "生物", chemistry: "化学",
 };
 
 const SUBJECT_KEYS = [
-  "rawScore", "assignedScore", "chinese", "math", "foreignLanguage", "preferredSubject",
-  "geography", "geographyAssigned", "politics", "politicsAssigned",
-  "chemistry", "chemistryAssigned", "biology", "biologyAssigned",
+  "chinese", "math", "foreignLanguage", "preferredSubject",
+  "geography", "politics", "biology", "chemistry",
 ] as const;
 
 const FOREIGN_SUBJECTS = ["foreignLanguage"] as const;
@@ -329,7 +315,7 @@ export async function confirmScoreImport(
         if (existing) {
           await prisma.score.update({
             where: { id: existing.id },
-            data: { score: val, fullScore, classId: studentClassId, remark: row.remark || null },
+            data: { score: val, fullScore, classId: studentClassId },
           });
           updated++;
         } else {
@@ -341,7 +327,6 @@ export async function confirmScoreImport(
               subject: subjectName,
               score: val,
               fullScore,
-              remark: row.remark || null,
             },
           });
           imported++;
@@ -372,26 +357,10 @@ export async function confirmScoreImport(
 
 function matchStudent(row: ImportRow, students: any[]): any | null {
   const name = row.studentName?.trim() || "";
-  const phone = row.phone?.trim() || "";
-  const studentNo = row.studentNo?.trim() || "";
   const className = row.className?.trim() || "";
 
   if (!name) return null;
 
-  // 1. 学号匹配
-  if (studentNo) {
-    const byNo = students.find((s: any) => s.studentNo && s.studentNo.trim() === studentNo);
-    if (byNo) return byNo;
-  }
-
-  // 2. 手机号匹配
-  if (phone) {
-    const byPhone = students.filter((s: any) => s.phone && s.phone.trim() === phone);
-    if (byPhone.length === 1) return byPhone[0];
-    if (byPhone.length > 1) return null;
-  }
-
-  // 3. 班级+姓名匹配
   const nameMatches = students.filter((s: any) => s.name && s.name.trim() === name);
 
   if (className) {
