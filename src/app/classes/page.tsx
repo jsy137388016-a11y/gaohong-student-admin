@@ -7,8 +7,8 @@ import { requireUser } from "@/lib/auth";
 import { getClassTeacherOptions } from "@/lib/class-teachers";
 import { displayValue } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
-import { requireModuleAccess, studentWhereForUser, classWhereForUser, scopeTypeOf } from "@/lib/permissions";
-import { clearUnassignedClassGroup, deactivateClass } from "./actions";
+import { requireModuleAccess, studentWhereForUser, classWhereForUser, roleCodeOf, scopeTypeOf } from "@/lib/permissions";
+import { bulkDeleteUnassignedStudents, clearUnassignedClassGroup, deactivateClass } from "./actions";
 import { ClassCreateModal } from "./ClassCreateModal";
 import { DeactivateClassButton } from "./deactivate-button";
 
@@ -16,6 +16,7 @@ export default async function ClassesPage() {
   const user = await requireUser();
   requireModuleAccess(user, "classes");
   const isHeadTeacher = scopeTypeOf(user) === "class";
+  const isAdmin = roleCodeOf(user) === "admin";
   const cookieStore = await cookies();
   const teachers = isHeadTeacher ? [] : await getClassTeacherOptions();
   let classRows: any[] = [];
@@ -135,6 +136,15 @@ export default async function ClassesPage() {
                           variant="warning"
                         />
                       </form>
+                      {isAdmin && unassignedCount > 0 ? (
+                        <form action={bulkDeleteUnassignedStudents}>
+                          <ConfirmButton
+                            label="批量删除学生"
+                            confirmText={`将批量删除当前暂时不分班中的 ${unassignedCount} 名学生。\n此操作为软删除，不做物理删除。\n删除后这些学生不会在正常列表中显示。\n确认继续吗？`}
+                            variant="danger"
+                          />
+                        </form>
+                      ) : null}
                     </div>
                   </td>
                 </tr>

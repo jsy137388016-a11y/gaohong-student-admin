@@ -6,7 +6,7 @@ import { cookies } from "next/headers";
 import { requireUser } from "@/lib/auth";
 import { getClassTeacherOptions } from "@/lib/class-teachers";
 import { textValue } from "@/lib/forms";
-import { assertModuleAccess, assertClassAccess, assertStudentAccess, studentWhereForUser } from "@/lib/permissions";
+import { assertModuleAccess, assertClassAccess, assertStudentAccess, roleCodeOf, studentWhereForUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 function redirectToClasses(params: { notice?: string; error?: string }): never {
@@ -53,6 +53,34 @@ export async function clearUnassignedClassGroup() {
 
   revalidatePath("/classes");
   redirectToClasses({ notice: "暂时不分班已清空并隐藏" });
+}
+
+export async function bulkDeleteUnassignedStudents() {
+  try {
+    const user = await requireUser();
+    assertModuleAccess(user, "classes");
+    if (roleCodeOf(user) !== "admin") throw new Error("只有管理员可以批量删除暂时不分班学生");
+
+    const result = await prisma.student.updateMany({
+      where: {
+        classId: null,
+        status: "active"
+      },
+      data: {
+        status: "deleted"
+      }
+    });
+
+    revalidatePath("/classes");
+    revalidatePath("/classes/unassigned");
+    revalidatePath("/students");
+    revalidatePath("/focus");
+    redirectToClasses({ notice: `已软删除暂时不分班中的 ${result.count} 名学生` });
+  } catch (error) {
+    if (isRedirectError(error)) throw error;
+    console.error("bulkDeleteUnassignedStudents error:", error);
+    redirectToClasses({ error: "批量删除失败：" + (error instanceof Error ? error.message : "未知错误") });
+  }
 }
 
 export async function createClass(formData: FormData) {
