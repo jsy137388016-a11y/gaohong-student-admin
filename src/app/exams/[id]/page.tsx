@@ -146,6 +146,7 @@ export default async function ExamDetailPage({ params, searchParams }: PageProps
             {ranked.map((item) => {
               // 构建科目→分数映射
               const subjectScoreMap = new Map<string, number>();
+              const firstScore = item.scores[0];
               for (const s of item.scores) {
                 subjectScoreMap.set(s.subject, s.score);
               }
@@ -162,11 +163,11 @@ export default async function ExamDetailPage({ params, searchParams }: PageProps
                   <td className="px-4 py-3 font-semibold">{item.total}</td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-1">
-                      {item.scores.map((s: any) => (
-                        <form key={s.id} action={deleteScore.bind(null, s.id, exam.id)} className="inline">
-                          <DeleteButton confirmText={`确认删除${s.subject}成绩吗？`} />
+                      {firstScore ? (
+                        <form action={deleteScore.bind(null, firstScore.id, exam.id)} className="inline">
+                          <DeleteButton confirmText={`确认删除${firstScore.subject}成绩吗？`} />
                         </form>
-                      ))}
+                      ) : null}
                     </div>
                   </td>
                 </tr>
