@@ -7,23 +7,27 @@ import { validateScoreImport, confirmScoreImport } from "@/app/exams/score-impor
 
 // ====== 满分配置 ======
 
-type SubjectKey = "chinese" | "math" | "english" | "japanese" | "russian"
-  | "physics" | "history" | "geography" | "politics" | "biology" | "chemistry";
+type SubjectKey = "rawScore" | "assignedScore" | "chinese" | "math" | "foreignLanguage" | "preferredSubject"
+  | "geography" | "geographyAssigned" | "politics" | "politicsAssigned"
+  | "chemistry" | "chemistryAssigned" | "biology" | "biologyAssigned";
 
 const FULL_SCORES: Record<SubjectKey, number> = {
-  chinese: 150, math: 150, english: 150, japanese: 150, russian: 150,
-  physics: 100, history: 100, geography: 100, politics: 100, biology: 100, chemistry: 100,
+  rawScore: 750, assignedScore: 750, chinese: 150, math: 150, foreignLanguage: 150, preferredSubject: 100,
+  geography: 100, geographyAssigned: 100, politics: 100, politicsAssigned: 100,
+  chemistry: 100, chemistryAssigned: 100, biology: 100, biologyAssigned: 100,
 };
 
 const SUBJECT_LABELS: Record<SubjectKey, string> = {
-  chinese: "语文", math: "数学", english: "英语", japanese: "日语",
-  russian: "俄语", physics: "物理", history: "历史", geography: "地理",
-  politics: "政治", biology: "生物", chemistry: "化学",
+  rawScore: "原始分", assignedScore: "赋分", chinese: "语文", math: "数学",
+  foreignLanguage: "外语", preferredSubject: "历史/物理", geography: "地理", geographyAssigned: "地理赋分",
+  politics: "政治", politicsAssigned: "政治赋分", chemistry: "化学", chemistryAssigned: "化学赋分",
+  biology: "生物", biologyAssigned: "生物赋分",
 };
 
 const ALL_SUBJECTS = [
-  "chinese", "math", "english", "japanese", "russian",
-  "physics", "history", "geography", "politics", "biology", "chemistry",
+  "rawScore", "assignedScore", "chinese", "math", "foreignLanguage", "preferredSubject",
+  "geography", "geographyAssigned", "politics", "politicsAssigned",
+  "chemistry", "chemistryAssigned", "biology", "biologyAssigned",
 ] as const;
 
 // ====== Props ======
@@ -48,17 +52,12 @@ export function ScoreImportPanel({ examId, examName, examGrade }: ScoreImportPro
   async function handleDownloadTemplate() {
     try {
       const XLSX = await import("xlsx");
-      const headers = [
-        "班级", "学号", "学生姓名", "手机号",
-        "语文", "数学", "英语", "日语", "俄语",
-        "历史", "物理", "地理", "政治", "生物", "化学",
-        "备注",
-      ];
+      const scoreHeaders = ALL_SUBJECTS.map((key) => SUBJECT_LABELS[key]);
+      const headers = ["班级", "学号", "学生姓名", "手机号", ...scoreHeaders, "备注"];
 
       const tipRow = [
         "", "", "", "",
-        "满分150", "满分150", "满分150", "满分150", "满分150",
-        "满分100", "满分100", "满分100", "满分100", "满分100", "满分100",
+        ...ALL_SUBJECTS.map((key) => `满分${FULL_SCORES[key]}`),
         "",
       ];
 
@@ -66,8 +65,7 @@ export function ScoreImportPanel({ examId, examName, examGrade }: ScoreImportPro
 
       ws["!cols"] = [
         { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 14 },
-        { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 },
-        { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 },
+        ...ALL_SUBJECTS.map(() => ({ wch: 10 })),
         { wch: 16 },
       ];
 
@@ -134,7 +132,7 @@ export function ScoreImportPanel({ examId, examName, examGrade }: ScoreImportPro
 
         // 跳过满分提示行
         const firstVal = String(raw[0] || "").trim();
-        if (!firstVal && String(raw[4] || "").includes("满分")) continue;
+        if (!firstVal && String(raw[colMap.rawScore >= 0 ? colMap.rawScore : 4] || "").includes("满分")) continue;
 
         const row: ImportRow = {
           rowNo: i + 1,
@@ -142,17 +140,20 @@ export function ScoreImportPanel({ examId, examName, examGrade }: ScoreImportPro
           studentNo: colMap.studentNo >= 0 ? String(raw[colMap.studentNo] || "").trim() : "",
           studentName: colMap.studentName >= 0 ? String(raw[colMap.studentName] || "").trim() : "",
           phone: colMap.phone >= 0 ? String(raw[colMap.phone] || "").trim() : "",
+          rawScore: parseScore(raw, colMap.rawScore),
+          assignedScore: parseScore(raw, colMap.assignedScore),
           chinese: parseScore(raw, colMap.chinese),
           math: parseScore(raw, colMap.math),
-          english: parseScore(raw, colMap.english),
-          japanese: parseScore(raw, colMap.japanese),
-          russian: parseScore(raw, colMap.russian),
-          physics: parseScore(raw, colMap.physics),
-          history: parseScore(raw, colMap.history),
+          foreignLanguage: parseScore(raw, colMap.foreignLanguage),
+          preferredSubject: parseScore(raw, colMap.preferredSubject),
           geography: parseScore(raw, colMap.geography),
+          geographyAssigned: parseScore(raw, colMap.geographyAssigned),
           politics: parseScore(raw, colMap.politics),
-          biology: parseScore(raw, colMap.biology),
+          politicsAssigned: parseScore(raw, colMap.politicsAssigned),
           chemistry: parseScore(raw, colMap.chemistry),
+          chemistryAssigned: parseScore(raw, colMap.chemistryAssigned),
+          biology: parseScore(raw, colMap.biology),
+          biologyAssigned: parseScore(raw, colMap.biologyAssigned),
           remark: colMap.remark >= 0 ? String(raw[colMap.remark] || "").trim() : "",
         };
 
@@ -446,8 +447,9 @@ function fmtScore(val: number | null): string {
 function buildColumnMap(headers: string[]): Record<string, number> {
   const map: Record<string, number> = {
     className: -1, studentNo: -1, studentName: -1, phone: -1,
-    chinese: -1, math: -1, english: -1, japanese: -1, russian: -1,
-    physics: -1, history: -1, geography: -1, politics: -1, biology: -1, chemistry: -1,
+    rawScore: -1, assignedScore: -1, chinese: -1, math: -1, foreignLanguage: -1, preferredSubject: -1,
+    geography: -1, geographyAssigned: -1, politics: -1, politicsAssigned: -1,
+    chemistry: -1, chemistryAssigned: -1, biology: -1, biologyAssigned: -1,
     remark: -1,
   };
 
@@ -456,31 +458,47 @@ function buildColumnMap(headers: string[]): Record<string, number> {
     studentNo: ["学号", "学生学号", "student_no", "studentno"],
     studentName: ["学生姓名", "姓名", "名字", "学生", "name", "student_name"],
     phone: ["手机号", "手机", "电话", "phone", "联系方式"],
+    rawScore: ["原始分", "原始总分", "rawscore", "raw_score"],
+    assignedScore: ["赋分", "总赋分", "赋分总分", "assignedscore", "assigned_score"],
     chinese: ["语文", "chinese", "yuwen"],
     math: ["数学", "math", "shuxue"],
-    english: ["英语", "english", "yingyu"],
-    japanese: ["日语", "japanese", "riyu"],
-    russian: ["俄语", "russian", "eyu"],
-    physics: ["物理", "physics", "wuli"],
-    history: ["历史", "history", "lishi"],
+    foreignLanguage: ["外语", "英语", "日语", "俄语", "foreign", "english", "yingyu"],
+    preferredSubject: ["历史/物理", "物理/历史", "历史物理", "首选科目", "首选", "preferred"],
     geography: ["地理", "geography", "dili"],
+    geographyAssigned: ["地理赋分", "地理等级分", "geography_assigned"],
     politics: ["政治", "politics", "zhengzhi"],
-    biology: ["生物", "biology", "shengwu"],
+    politicsAssigned: ["政治赋分", "政治等级分", "politics_assigned"],
     chemistry: ["化学", "chemistry", "huaxue"],
+    chemistryAssigned: ["化学赋分", "化学等级分", "chemistry_assigned"],
+    biology: ["生物", "biology", "shengwu"],
+    biologyAssigned: ["生物赋分", "生物等级分", "biology_assigned"],
     remark: ["备注", "说明", "remark", "note"],
   };
 
   for (let i = 0; i < headers.length; i++) {
-    const h = headers[i].toLowerCase();
+    const h = normalizeHeader(headers[i]);
     for (const [field, fieldAliases] of Object.entries(aliases)) {
       if (map[field] >= 0) continue;
-      if (fieldAliases.some((alias) => h === alias.toLowerCase() || h.includes(alias.toLowerCase()))) {
-        map[field] = i;
-      }
+      if (fieldAliases.some((alias) => h === normalizeHeader(alias))) map[field] = i;
+    }
+  }
+
+  for (let i = 0; i < headers.length; i++) {
+    const h = normalizeHeader(headers[i]);
+    for (const [field, fieldAliases] of Object.entries(aliases)) {
+      if (map[field] >= 0) continue;
+      if (fieldAliases.some((alias) => {
+        const normalizedAlias = normalizeHeader(alias);
+        return normalizedAlias.length > 2 && h.includes(normalizedAlias);
+      })) map[field] = i;
     }
   }
 
   return map;
+}
+
+function normalizeHeader(value: string) {
+  return String(value || "").toLowerCase().replace(/[\s_\-（）()]/g, "");
 }
 
 function parseScore(raw: any[], colIndex: number): number | null {

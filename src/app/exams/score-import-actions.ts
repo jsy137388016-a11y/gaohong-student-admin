@@ -11,17 +11,20 @@ export interface ImportRow {
   studentNo: string;
   studentName: string;
   phone: string;
+  rawScore: number | null;
+  assignedScore: number | null;
   chinese: number | null;
   math: number | null;
-  english: number | null;
-  japanese: number | null;
-  russian: number | null;
-  physics: number | null;
-  history: number | null;
+  foreignLanguage: number | null;
+  preferredSubject: number | null;
   geography: number | null;
+  geographyAssigned: number | null;
   politics: number | null;
-  biology: number | null;
+  politicsAssigned: number | null;
   chemistry: number | null;
+  chemistryAssigned: number | null;
+  biology: number | null;
+  biologyAssigned: number | null;
   remark: string;
 }
 
@@ -53,28 +56,32 @@ export interface ImportResult {
 
 // ====== 满分配置 ======
 
-type SubjectKey = "chinese" | "math" | "english" | "japanese" | "russian"
-  | "physics" | "history" | "geography" | "politics" | "biology" | "chemistry";
+type SubjectKey = "rawScore" | "assignedScore" | "chinese" | "math" | "foreignLanguage" | "preferredSubject"
+  | "geography" | "geographyAssigned" | "politics" | "politicsAssigned"
+  | "chemistry" | "chemistryAssigned" | "biology" | "biologyAssigned";
 
 const FULL_SCORES: Record<SubjectKey, number> = {
-  chinese: 150, math: 150, english: 150, japanese: 150, russian: 150,
-  physics: 100, history: 100, geography: 100, politics: 100, biology: 100, chemistry: 100,
+  rawScore: 750, assignedScore: 750, chinese: 150, math: 150, foreignLanguage: 150, preferredSubject: 100,
+  geography: 100, geographyAssigned: 100, politics: 100, politicsAssigned: 100,
+  chemistry: 100, chemistryAssigned: 100, biology: 100, biologyAssigned: 100,
 };
 
 const SUBJECT_LABELS: Record<SubjectKey, string> = {
-  chinese: "语文", math: "数学", english: "英语", japanese: "日语",
-  russian: "俄语", physics: "物理", history: "历史", geography: "地理",
-  politics: "政治", biology: "生物", chemistry: "化学",
+  rawScore: "原始分", assignedScore: "赋分", chinese: "语文", math: "数学",
+  foreignLanguage: "外语", preferredSubject: "历史/物理", geography: "地理", geographyAssigned: "地理赋分",
+  politics: "政治", politicsAssigned: "政治赋分", chemistry: "化学", chemistryAssigned: "化学赋分",
+  biology: "生物", biologyAssigned: "生物赋分",
 };
 
 const SUBJECT_KEYS = [
-  "chinese", "math", "english", "japanese", "russian",
-  "physics", "history", "geography", "politics", "biology", "chemistry",
+  "rawScore", "assignedScore", "chinese", "math", "foreignLanguage", "preferredSubject",
+  "geography", "geographyAssigned", "politics", "politicsAssigned",
+  "chemistry", "chemistryAssigned", "biology", "biologyAssigned",
 ] as const;
 
-const FOREIGN_SUBJECTS = ["english", "japanese", "russian"] as const;
-const PREFERRED_SUBJECTS = ["physics", "history"] as const;
-const ELECTIVE_SUBJECTS = ["chemistry", "biology", "politics", "geography"] as const;
+const FOREIGN_SUBJECTS = ["foreignLanguage"] as const;
+const PREFERRED_SUBJECTS = ["preferredSubject"] as const;
+const ELECTIVE_SUBJECTS = ["geography", "politics", "chemistry", "biology"] as const;
 
 // ====== 校验导入数据 ======
 
@@ -167,7 +174,7 @@ export async function validateScoreImport(examId: number, rawRows: ImportRow[]):
     // 外语规则
     const foreignFilled = FOREIGN_SUBJECTS.filter((s) => row[s] !== null && row[s] !== undefined);
     if (foreignFilled.length >= 2) {
-      errors.push("外语科目只能填写一项");
+      errors.push("外语成绩重复填写");
     } else if (foreignFilled.length === 0 && filledSubjects.length > 0) {
       warnings.push("外语未填写");
     }
@@ -177,7 +184,7 @@ export async function validateScoreImport(examId: number, rawRows: ImportRow[]):
     if (preferredFilled.length === 0 && filledSubjects.length > 0) {
       warnings.push("首选科目未填写");
     } else if (preferredFilled.length === 2) {
-      warnings.push("物理和历史同时有成绩，请确认是否特殊情况");
+      warnings.push("首选科目成绩重复填写");
     }
 
     // 再选科目规则
