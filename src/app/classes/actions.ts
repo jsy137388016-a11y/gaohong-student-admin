@@ -5,7 +5,6 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { actionErrorMessage, isNextRedirectError } from "@/lib/action-utils";
 import { requireUser } from "@/lib/auth";
-import { getClassTeacherOptions } from "@/lib/class-teachers";
 import { textValue } from "@/lib/forms";
 import { assertModuleAccess, assertClassAccess, assertStudentAccess, roleCodeOf, studentWhereForUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
@@ -15,17 +14,6 @@ function redirectToClasses(params: { notice?: string; error?: string }): never {
   if (params.notice) query.set("notice", params.notice);
   if (params.error) query.set("error", params.error);
   redirect(`/classes?${query.toString()}`);
-}
-
-async function headTeacherNameFromForm(formData: FormData) {
-  const rawUserId = textValue(formData, "headTeacherUserId");
-  const teacherId = Number(rawUserId);
-  if (!Number.isInteger(teacherId) || teacherId <= 0) throw new Error("请选择有效的班主任账号");
-
-  const teachers = await getClassTeacherOptions();
-  const teacher = teachers.find((item) => item.id === teacherId);
-  if (!teacher) throw new Error("所选班主任账号不可用，请重新选择");
-  return teacher.name;
 }
 
 export async function clearUnassignedClassGroup() {
@@ -84,7 +72,7 @@ export async function createClass(formData: FormData) {
   try {
     const user = await requireUser();
     assertModuleAccess(user, "classes");
-    const headTeacher = await headTeacherNameFromForm(formData);
+    const headTeacher = textValue(formData, "headTeacher")!;
     await prisma.classRoom.create({
       data: {
         name: textValue(formData, "name")!,
@@ -106,7 +94,7 @@ export async function updateClass(id: number, formData: FormData) {
     const user = await requireUser();
     assertModuleAccess(user, "classes");
     await assertClassAccess(user, id);
-    const headTeacher = await headTeacherNameFromForm(formData);
+    const headTeacher = textValue(formData, "headTeacher")!;
     await prisma.classRoom.update({
       where: { id },
       data: {

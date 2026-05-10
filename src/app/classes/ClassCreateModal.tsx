@@ -4,9 +4,8 @@ import { useState, useTransition } from "react";
 import { Plus } from "lucide-react";
 import { Field, inputClass, ModalShell, textareaClass } from "@/components/ui";
 import { createClass } from "./actions";
-import type { ClassTeacherOption } from "@/lib/class-teachers";
 
-export function ClassCreateModal({ teachers }: { teachers: ClassTeacherOption[] }) {
+export function ClassCreateModal() {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState("");
@@ -49,14 +48,7 @@ export function ClassCreateModal({ teachers }: { teachers: ClassTeacherOption[] 
             <input name="grade" required placeholder="高三" className={inputClass} disabled={isPending} />
           </Field>
           <Field label="班主任" required>
-            <select name="headTeacherUserId" required defaultValue="" className={inputClass} disabled={isPending || teachers.length === 0}>
-              <option value="">{teachers.length === 0 ? "暂无可用班主任账号" : "请选择班主任"}</option>
-              {teachers.map((teacher) => (
-                <option key={teacher.id} value={teacher.id}>
-                  {teacher.name}（{teacher.username}）
-                </option>
-              ))}
-            </select>
+            <input name="headTeacher" required placeholder="请输入班主任姓名" className={inputClass} disabled={isPending} />
           </Field>
           <Field label="备注">
             <textarea name="remark" className={textareaClass} disabled={isPending} />
