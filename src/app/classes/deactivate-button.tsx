@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { PowerOff } from "lucide-react";
+import { actionUrl } from "@/lib/action-utils";
 
 export function DeactivateClassButton({
   classId,
@@ -29,7 +30,7 @@ export function DeactivateClassButton({
     startTransition(async () => {
       const result = await action(classId);
       if (result.success) {
-        window.location.href = "/classes?notice=班级已停用，学生已转入暂不分班";
+        window.location.href = actionUrl("/classes", { notice: "班级已停用，学生已转入暂不分班" });
         return;
       }
       alert(result.error || "停用失败");

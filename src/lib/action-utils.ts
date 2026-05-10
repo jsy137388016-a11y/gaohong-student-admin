@@ -8,3 +8,11 @@ export function isNextRedirectError(error: unknown) {
 export function actionErrorMessage(error: unknown, fallback = "未知错误") {
   return error instanceof Error ? error.message : fallback;
 }
+
+export function actionUrl(path: string, params: { notice?: string; error?: string } = {}) {
+  const query = new URLSearchParams();
+  if (params.notice) query.set("notice", params.notice);
+  if (params.error) query.set("error", params.error);
+  const qs = query.toString();
+  return qs ? `${path}?${qs}` : path;
+}

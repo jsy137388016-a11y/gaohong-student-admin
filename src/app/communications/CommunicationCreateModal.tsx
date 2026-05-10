@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Plus } from "lucide-react";
 import { Field, inputClass, ModalShell, textareaClass } from "@/components/ui";
+import { actionUrl } from "@/lib/action-utils";
 import { methodLabels } from "@/lib/format";
 import { createCommunication } from "./actions";
 
@@ -29,7 +30,7 @@ export function CommunicationCreateModal({ students, userName }: { students: Stu
     startTransition(async () => {
       const result = await createCommunication(formData);
       if (result.success) {
-        window.location.href = "/communications?notice=沟通记录已新增";
+        window.location.href = actionUrl("/communications", { notice: "沟通记录已新增" });
         return;
       }
       setError(result.error || "新增沟通记录失败");

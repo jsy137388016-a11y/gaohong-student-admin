@@ -3,6 +3,7 @@
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { actionUrl } from "@/lib/action-utils";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canManageAccounts, requireAccountManageAccess, roleCodeOf } from "@/lib/permissions";
@@ -23,10 +24,7 @@ function fieldValues(formData: FormData, key: string) {
 }
 
 function redirectToSettings(params: { notice?: string; error?: string }): never {
-  const query = new URLSearchParams();
-  if (params.notice) query.set("notice", params.notice);
-  if (params.error) query.set("error", params.error);
-  redirect(`/settings?${query.toString()}`);
+  redirect(actionUrl("/settings", params));
 }
 
 function scopeForRole(role: string, formData: FormData) {

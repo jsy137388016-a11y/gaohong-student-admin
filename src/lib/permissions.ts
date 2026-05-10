@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { actionUrl } from "@/lib/action-utils";
 import { prisma } from "@/lib/prisma";
 
 export const MODULES = [
@@ -81,8 +82,7 @@ export function allowedModulesFor(user: AuthUser) {
 }
 
 function redirectWithError(path: string, message: string): never {
-  const query = new URLSearchParams({ error: message });
-  redirect(`${path}?${query.toString()}`);
+  redirect(actionUrl(path, { error: message }));
 }
 
 export function requireModuleAccess(user: AuthUser, module: ModuleKey) {

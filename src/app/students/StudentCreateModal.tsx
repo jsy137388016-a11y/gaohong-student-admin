@@ -3,6 +3,7 @@
 import { Plus } from "lucide-react";
 import { useState, useTransition } from "react";
 import { Field, inputClass, ModalShell, textareaClass } from "@/components/ui";
+import { actionUrl } from "@/lib/action-utils";
 import { createStudent } from "./actions";
 
 type ClassItem = { id: number; grade: string; name: string };
@@ -25,7 +26,7 @@ export function StudentCreateModal({ classes }: { classes: ClassItem[] }) {
       const result = await createStudent(formData);
       if (result?.success) {
         setOpen(false);
-        window.location.href = "/students?notice=学生已新增";
+        window.location.href = actionUrl("/students", { notice: "学生已新增" });
       } else {
         setError(result?.error || "新增失败");
       }

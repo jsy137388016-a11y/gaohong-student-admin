@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { actionErrorMessage, isNextRedirectError } from "@/lib/action-utils";
+import { actionErrorMessage, actionUrl, isNextRedirectError } from "@/lib/action-utils";
 import { assertModuleAccess, assertStudentAccess } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { optionalNumber, textValue } from "@/lib/forms";
@@ -54,7 +54,7 @@ export async function updateStudent(id: number, formData: FormData) {
       }
     });
     revalidatePath("/students");
-    redirect("/students?notice=学生信息已更新");
+    redirect(actionUrl("/students", { notice: "学生信息已更新" }));
   } catch (error) {
     if (isNextRedirectError(error)) throw error;
     console.error("updateStudent error:", error);
@@ -80,7 +80,7 @@ export async function deleteStudent(id: number) {
     });
     revalidatePath("/students");
     revalidatePath("/focus");
-    redirect("/students?notice=学生已删除");
+    redirect(actionUrl("/students", { notice: "学生已删除" }));
   } catch (error) {
     if (isNextRedirectError(error)) throw error;
     console.error("deleteStudent error:", error);

@@ -3,17 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import { actionErrorMessage, isNextRedirectError } from "@/lib/action-utils";
+import { actionErrorMessage, actionUrl, isNextRedirectError } from "@/lib/action-utils";
 import { requireUser } from "@/lib/auth";
 import { textValue } from "@/lib/forms";
 import { assertModuleAccess, assertClassAccess, assertStudentAccess, roleCodeOf, studentWhereForUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 function redirectToClasses(params: { notice?: string; error?: string }): never {
-  const query = new URLSearchParams();
-  if (params.notice) query.set("notice", params.notice);
-  if (params.error) query.set("error", params.error);
-  redirect(`/classes?${query.toString()}`);
+  redirect(actionUrl("/classes", params));
 }
 
 export async function clearUnassignedClassGroup() {
@@ -105,7 +102,7 @@ export async function updateClass(id: number, formData: FormData) {
       }
     });
     revalidatePath("/classes");
-    redirect("/classes?notice=班级信息已更新");
+    redirectToClasses({ notice: "班级信息已更新" });
   } catch (error) {
     if (isNextRedirectError(error)) throw error;
     console.error("updateClass error:", error);
@@ -191,7 +188,7 @@ export async function transferClassStudent(studentId: number, currentClassId: st
     revalidatePath(classPath(currentClassId));
     revalidatePath("/classes");
     revalidatePath("/students");
-    redirect(`${classPath(currentClassId)}?notice=学生已换班`);
+    redirect(actionUrl(classPath(currentClassId), { notice: "学生已换班" }));
   } catch (error) {
     if (isNextRedirectError(error)) throw error;
     console.error("transferClassStudent error:", error);
@@ -221,7 +218,7 @@ export async function withdrawClassStudent(studentId: number, currentClassId: st
     revalidatePath("/classes");
     revalidatePath("/students");
     revalidatePath("/focus");
-    redirect(`${classPath(currentClassId)}?notice=学生已标记退学`);
+    redirect(actionUrl(classPath(currentClassId), { notice: "学生已标记退学" }));
   } catch (error) {
     if (isNextRedirectError(error)) throw error;
     console.error("withdrawClassStudent error:", error);
@@ -249,7 +246,7 @@ export async function deleteClassStudent(studentId: number, currentClassId: stri
     revalidatePath("/classes");
     revalidatePath("/students");
     revalidatePath("/focus");
-    redirect(`${classPath(currentClassId)}?notice=学生已删除`);
+    redirect(actionUrl(classPath(currentClassId), { notice: "学生已删除" }));
   } catch (error) {
     if (isNextRedirectError(error)) throw error;
     console.error("deleteClassStudent error:", error);

@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Plus } from "lucide-react";
 import { StudentSearchSelect } from "@/components/StudentSearchSelect";
 import { Field, inputClass, ModalShell, textareaClass } from "@/components/ui";
+import { actionUrl } from "@/lib/action-utils";
 import { createDiscipline } from "./actions";
 
 export function DisciplineCreateForm({
@@ -30,7 +31,7 @@ export function DisciplineCreateForm({
       const result = await createDiscipline(formData);
       if (result.success) {
         setOpen(false);
-        window.location.href = "/discipline?notice=违纪记录已新增";
+        window.location.href = actionUrl("/discipline", { notice: "违纪记录已新增" });
       } else {
         setError(result.error || "提交失败，请稍后重试");
       }

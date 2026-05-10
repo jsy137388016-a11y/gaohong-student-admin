@@ -2,6 +2,7 @@
 
 import { useActionState, useRef } from "react";
 import { Trash2 } from "lucide-react";
+import { actionUrl } from "@/lib/action-utils";
 import { deleteDiscipline } from "./actions";
 
 export function DeleteDisciplineRowButton({ id, variant = "icon" }: { id: number; variant?: "icon" | "menu" }) {
@@ -10,7 +11,7 @@ export function DeleteDisciplineRowButton({ id, variant = "icon" }: { id: number
     async (_prev: { ok: boolean; error?: string } | null, _formData: FormData) => {
       try {
         await deleteDiscipline(id);
-        window.location.href = "/discipline?notice=违纪记录已删除";
+        window.location.href = actionUrl("/discipline", { notice: "违纪记录已删除" });
         return { ok: true };
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : "删除失败";

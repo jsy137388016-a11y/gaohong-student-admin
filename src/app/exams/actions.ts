@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { actionErrorMessage, isNextRedirectError } from "@/lib/action-utils";
+import { actionErrorMessage, actionUrl, isNextRedirectError } from "@/lib/action-utils";
 import { requireUser } from "@/lib/auth";
 import { dateValue, textValue } from "@/lib/forms";
 import { assertModuleAccess } from "@/lib/permissions";
@@ -23,7 +23,7 @@ export async function createExam(formData: FormData) {
     });
     revalidatePath("/exams");
     revalidatePath("/dashboard");
-    redirect("/exams?notice=考试已新增");
+    redirect(actionUrl("/exams", { notice: "考试已新增" }));
   } catch (error) {
     if (isNextRedirectError(error)) throw error;
     console.error("createExam error:", error);
@@ -38,7 +38,7 @@ export async function deleteExam(id: number) {
     await prisma.exam.delete({ where: { id } });
     revalidatePath("/exams");
     revalidatePath("/dashboard");
-    redirect("/exams?notice=考试已删除");
+    redirect(actionUrl("/exams", { notice: "考试已删除" }));
   } catch (error) {
     if (isNextRedirectError(error)) throw error;
     console.error("deleteExam error:", error);
@@ -52,7 +52,7 @@ export async function deleteScore(scoreId: number, examId: number) {
     assertModuleAccess(user, "exams");
     await prisma.score.delete({ where: { id: scoreId } });
     revalidatePath(`/exams/${examId}`);
-    redirect(`/exams/${examId}?notice=成绩已删除`);
+    redirect(actionUrl(`/exams/${examId}`, { notice: "成绩已删除" }));
   } catch (error) {
     if (isNextRedirectError(error)) throw error;
     console.error("deleteScore error:", error);

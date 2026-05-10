@@ -2,17 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { actionErrorMessage, isNextRedirectError } from "@/lib/action-utils";
+import { actionErrorMessage, actionUrl, isNextRedirectError } from "@/lib/action-utils";
 import { requireUser } from "@/lib/auth";
 import { dateValue, optionalNumber, textValue } from "@/lib/forms";
 import { assertModuleAccess, assertStudentAccess, assertStudentsAccess, isHomeroomTeacher } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 function redirectToAttendance(params: { notice?: string; error?: string }): never {
-  const query = new URLSearchParams();
-  if (params.notice) query.set("notice", params.notice);
-  if (params.error) query.set("error", params.error);
-  redirect(`/attendance?${query.toString()}`);
+  redirect(actionUrl("/attendance", params));
 }
 
 const teacherManualTypes = new Set(["leave"]);

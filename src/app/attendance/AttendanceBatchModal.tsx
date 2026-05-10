@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { CheckSquare, Users } from "lucide-react";
 import { Field, inputClass, ModalShell, textareaClass } from "@/components/ui";
 import { attendanceLabels } from "@/lib/format";
+import { actionUrl } from "@/lib/action-utils";
 import { createBatchAttendance } from "./actions";
 
 type ClassItem = { id: number; grade: string; name: string };
@@ -78,7 +79,7 @@ export function AttendanceBatchModal({
     startTransition(async () => {
       const result = await createBatchAttendance(formData);
       if (result.success) {
-        window.location.href = `/attendance?notice=已批量录入${result.count || selectedIds.size}条考勤`;
+        window.location.href = actionUrl("/attendance", { notice: `已批量录入${result.count || selectedIds.size}条考勤` });
         return;
       }
       setError(result.error || "批量录入失败");

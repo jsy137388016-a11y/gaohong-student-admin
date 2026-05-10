@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Plus } from "lucide-react";
 import { Field, inputClass, ModalShell, textareaClass } from "@/components/ui";
+import { actionUrl } from "@/lib/action-utils";
 import { createClass } from "./actions";
 
 export function ClassCreateModal() {
@@ -22,7 +23,7 @@ export function ClassCreateModal() {
     startTransition(async () => {
       const result = await createClass(formData);
       if (result.success) {
-        window.location.href = "/classes?notice=班级已新增";
+        window.location.href = actionUrl("/classes", { notice: "班级已新增" });
         return;
       }
       setError(result.error || "创建班级失败");

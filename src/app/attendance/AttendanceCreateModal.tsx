@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Plus } from "lucide-react";
 import { StudentSearchSelect } from "@/components/StudentSearchSelect";
 import { Field, inputClass, ModalShell, textareaClass } from "@/components/ui";
+import { actionUrl } from "@/lib/action-utils";
 import { attendanceLabels } from "@/lib/format";
 import { createAttendance } from "./actions";
 
@@ -27,7 +28,7 @@ export function AttendanceCreateModal({ students, userName, onlyLeave = false }:
       const result = await createAttendance(formData);
       if (result.success) {
         setOpen(false);
-        window.location.href = "/attendance?notice=考勤记录已新增";
+        window.location.href = actionUrl("/attendance", { notice: "考勤记录已新增" });
       } else {
         setError(result.error || "新增失败");
       }
